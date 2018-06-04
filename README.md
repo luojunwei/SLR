@@ -53,7 +53,7 @@ Scaffolder: SLR
 	bwa index contigs.fasta
 	bwa mem -k11 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
 	samtools view -Sb aligning.sam > aligning.bam
-	SLR -c <contigs.fa> -r <aligning.bam> -p <output_directory> -m <minimum_contig_length> -n <minimum_read_length>
+	SLR -c <contigs.fa> -r <aligning.bam> -p <output_directory> [-m <minimum_contig_length>] [-n <minimum_read_length>]
 	<contigs.fa>: 
 		The file includes contigs produced by one assembler.
 	<aligning.bam>:
@@ -61,7 +61,7 @@ Scaffolder: SLR
 	<output_directory>:
 		The directory of scaffolding result.
 	<minimum_contig_length>: 
-		The contigs whose lengthes are larger than minimum_contig_length will be used for scaffolding.
+		The contigs whose lengthes are larger than minimum_contig_length will be used for scaffolding. Default:2000
 	<minimum_read_length>: 
-		The long reads whose lengthes are larger than minimum_read_length will be used for scaffolding.
+		The long reads whose lengthes are larger than minimum_read_length will be used for scaffolding. Default:3000
 ```
