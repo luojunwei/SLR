@@ -50,9 +50,9 @@ Scaffolder: SLR
 4) Running.
 ```
 	Run command line: 
-  bwa index contigs.fasta
-  bwa mem -k11 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
-  samtools view -Sb aligning.sam > aligning.bam
+	  bwa index contigs.fasta
+	  bwa mem -k11 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
+	  samtools view -Sb aligning.sam > aligning.bam
 	SLR -c <contigs.fa> -r <aligning.bam> -p <output_directory> -m <minimum_contig_length> -n <minimum_read_length>
 	<contigs.fa>: 
 		The file includes contigs produced by one assembler.
