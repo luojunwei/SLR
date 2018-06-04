@@ -34,7 +34,7 @@ Scaffolder: SLR
 	SLR is an scaffolder which aims to determine the orientations and orders of contigs. 
 	The contigs can be produced by any assembler.
 	The input data of SLR is the long reads (fasta format) and the contigs.
-
+```
 2) Before installing and running
 	First, Please build and install Samtools and Bamtools. And add enviroment vairable BAMTOOLS_HOME which is the path of bamtools.
 
@@ -45,7 +45,7 @@ Scaffolder: SLR
 	cd SLR
 	export BAMTOOLS_HOME=/path_bamtools/
 	make
-
+```
 4) Running.
 ```
 	Run command line: 
@@ -63,3 +63,4 @@ Scaffolder: SLR
 		The contigs whose lengthes are larger than minimum_contig_length will be used for scaffolding.
 	<minimum_read_length>: 
 		The long reads whose lengthes are larger than minimum_read_length will be used for scaffolding.
+```
