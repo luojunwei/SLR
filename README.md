@@ -36,7 +36,6 @@ Scaffolder: SLR
 	The input data of SLR is the long reads (fasta format) and the contigs.
 
 2) Before installing and running
-```
 	First, Please build and install Samtools and Bamtools. And add enviroment vairable BAMTOOLS_HOME which is the path of bamtools.
 
 3) Installing.
@@ -50,9 +49,9 @@ Scaffolder: SLR
 4) Running.
 ```
 	Run command line: 
-	  bwa index contigs.fasta
-	  bwa mem -k11 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
-	  samtools view -Sb aligning.sam > aligning.bam
+	bwa index contigs.fasta
+	bwa mem -k11 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
+	samtools view -Sb aligning.sam > aligning.bam
 	SLR -c <contigs.fa> -r <aligning.bam> -p <output_directory> -m <minimum_contig_length> -n <minimum_read_length>
 	<contigs.fa>: 
 		The file includes contigs produced by one assembler.
@@ -64,4 +63,3 @@ Scaffolder: SLR
 		The contigs whose lengthes are larger than minimum_contig_length will be used for scaffolding.
 	<minimum_read_length>: 
 		The long reads whose lengthes are larger than minimum_read_length will be used for scaffolding.
-```
