@@ -36,8 +36,9 @@ Scaffolder: SLR
 	The input data of SLR is the long reads (fasta format) and the contigs.
 ```
 2) Before installing and running
+```
 	First, Please build and install Samtools and Bamtools. And add enviroment vairable BAMTOOLS_HOME which is the path of bamtools.
-
+```
 3) Installing.
 ```
 	SLR should run on Linux operating sysetm with gcc. We test SLR using gcc4.6.3 on Ubuntu.
