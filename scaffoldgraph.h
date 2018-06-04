@@ -12,7 +12,7 @@
 
 #include "contig.h"
 #include "read.h"
-#include "aligning.h"
+#include "aligningFromBam.h"
 
 using namespace std;
 
@@ -39,6 +39,15 @@ typedef struct ScaffoldGraphHead{
 	int scaffoldGraphNodeCount;
 }ScaffoldGraphHead;
 
+typedef struct SimpleGraph{
+	int leftIndex;
+	int rightIndex;
+	int count1;
+	int count2;
+	int count3;
+	int count4;
+}SimpleGraph;
+
 
 
 void InsertOutOrInEdge(ScaffoldGraphHead * scaffoldGraphHead, int readIndex, int leftNodeIndex, bool leftOrientation, int rightNodeIndex, bool rightOrientation, int gapDistance, int overlapLength);
@@ -51,7 +60,11 @@ void InsertEdgeToScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, AligningRe
 
 void IncreaseAligningResultHead(AligningResultHead * aligningResultHead, int count);
 
+void GetPathInLongRead(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, AligningResultHead * aligningResultHead, ContigGraphHead * contigGraphHead, char * file, char * line, int maxSize, FILE * fp1, FILE * originalPathFileFP);
+
 void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, AligningResultHead * aligningResultHead, ContigGraphHead * contigGraphHead, char * file, char * line, int maxSize);
+
+void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, char * file, char * line, int maxSize);
 
 void DeleteEdgeWithMinReadCount(ScaffoldGraphHead * scaffoldGraphHead, int minReadCount);
 
@@ -60,6 +73,8 @@ void OutputScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead);
 void DeleteScaffoldGraphNode(ScaffoldGraphNode * edge);
 
 ScaffoldGraphNode * DeleteScaffoldGraphSpecialNode(ScaffoldGraphNode * edge, int nodeIndex, bool orientation);
+
+int DeleteSpecialScaffoldEdge(ScaffoldGraph * scaffoldGraph, long int index, long int index1);
 
 ScaffoldGraphNode * MergeMultipleEdges(ScaffoldGraphNode * edge, int contigLength, int contigLength0);
 
@@ -74,5 +89,15 @@ bool VisitOutNode(ScaffoldGraphHead * scaffoldGraphHead, int leftIndex, bool out
 bool VisitInNode(ScaffoldGraphHead * scaffoldGraphHead, int rightIndex, bool in, int leftIndex, bool * visited);
 
 void RemoveCycleInScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead);
+
+int GetEdgeNumber(ScaffoldGraphHead * scaffoldGraphHead, int index, bool out);
+
+bool GetOverlapEdgeIndex(ScaffoldGraphNode * left, ScaffoldGraphNode * right);
+
+void SortNodeOptimize(ContigSetHead * contigSetHead, char * file, char * line, int maxSize, FILE * longReadFileFP);
+
+bool * GetLineIndex(ContigSetHead * contigSetHead, char * file, char * line, int maxSize, long int & lineCount);
+
+void AddEdgeInSimpleGraph(SimpleGraph * simpleGraph, long int simpleGraphNodeCount, int leftIndex, bool leftOrientation, int rightIndex, bool rightOrientation);
 
 #endif

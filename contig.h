@@ -72,7 +72,7 @@ void DeleteTailOfContigSet(ContigSetHead * contigSetHead, int tailLength);
 
 void DeleteArrayTwoElementList(ArrayTwoElementList * arrayTwoElementList);
 
-
+char * ReverseComplement(char * temp);
 
 
 

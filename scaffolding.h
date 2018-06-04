@@ -12,8 +12,11 @@
 
 #include "contig.h"
 #include "read.h"
-#include "aligning.h"
+#include "aligningFromBam.h"
 #include "scaffoldgraph.h"
+#include "lp/lp_lib.h"
+
+using namespace std;
 
 typedef struct ContigSequence{
     int index;
@@ -27,6 +30,7 @@ typedef struct ScaffoldSet{
     ContigSequence * contigSequence;
 	int * contigIndex;
 	int contigNum;
+	int sequenceCount;
     ScaffoldSet * next;
 }ScaffoldSet;
 
@@ -34,14 +38,13 @@ typedef struct ScaffoldSetHead{
     ScaffoldSet * scaffoldSet;
 }ScaffoldSetHead;
 
+long int DetermineOrientationOfContigs(ScaffoldGraph * scaffoldGraph, long int contigCount, bool * contigOrientation);
 
+long int * IterativeDetermineOrderOfContigs(ContigSetHead * contigSetHead, ScaffoldGraph * scaffoldGraph, long int contigCount, bool * contigOrientation, long int * contigPosition, long int allContigLength);
 
+ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, char * file, char * line, int maxSize, char * dir);
 
-ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead);
-
-ScaffoldGraphNode * GetOptimizeNodeIndex(ScaffoldGraphHead * scaffoldGraphHead, int nodeIndex, bool orientation, ContigSequence * tempContigSequence, bool right, bool & uniq);
-
-int GetOverlapEdgeNum(ScaffoldGraphHead * scaffoldGraphHead, ContigSequence * contigSequence, int readIndex, bool right);
+ScaffoldGraphNode * GetOptimizeNodeIndex(ScaffoldGraphHead * scaffoldGraphHead, int nodeIndex, bool orientation, ContigSequence * tempContigSequence, bool right, bool * printIndex);
 
 void OptimizeScaffoldSetCongtigSequence(ScaffoldSet * scaffoldSet, int contigNum);
 
@@ -60,6 +63,14 @@ int SearchScaffoldEdge(int index, ContigSequence * contigSequence);
 void OutPutScaffoldTag(ScaffoldSet * scaffoldSet, char * result);
 
 void OutPutScaffoldSet(ScaffoldSet * scaffoldSet, ContigSetHead * contigSetHead, char * result);
+
+void InsertRepeatContigToSequence(ContigSetHead * contigSetHead, ScaffoldSetHead * scaffoldSetHead, bool * printIndex, char * file, char * line, int maxSize);
+
+bool SearchInsertContigSequence(ScaffoldSetHead * tempInsertSequenceHead, int startIndex, int endIndex, int * contigIndex, int * distance, bool * orientation, int * overlapLength, int count);
+
+void InsertShortContigToSequence(ContigSequence * tempContigSequence, ContigSequence * preContigSequence, char * file, char * line, int maxSize);
+
+void InsertRepeatContigToSequence1(ContigSetHead * contigSetHead, ScaffoldSetHead * scaffoldSetHead, bool * printIndex, char * file, char * line, int maxSize);
 
 
 

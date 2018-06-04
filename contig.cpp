@@ -116,11 +116,14 @@ ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold){
 	for(int i = 0; i < contigSetHead->contigCount; i++){
 		contigSetHead->visited[i] = false;
 		if(contigSetHead->contigSet[i].contigLength < contigLengthThreshold){
-			contigSetHead->minContigCount++;
-			contigSetHead->minAllContigLength =  contigSetHead->minAllContigLength + contigSetHead->contigSet[i].contigLength;
+			contigSetHead->contigSet[i].shortContig = true;
+			//contigSetHead->minContigCount++;
+			//contigSetHead->minAllContigLength =  contigSetHead->minAllContigLength + contigSetHead->contigSet[i].contigLength;
+		}else{
+			contigSetHead->contigSet[i].shortContig = false;
 		}
 	}
-	
+	/*
 	if(contigSetHead->minContigCount > 0){
 		contigSetHead->minContigSet = (Contig *)malloc(sizeof(Contig)*contigSetHead->minContigCount);
 		for(int i = 0; i < contigSetHead->minContigCount; i++){
@@ -162,7 +165,7 @@ ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold){
 		contigSetHead->allContigLength = contigSetHead->allContigLength - contigSetHead->minAllContigLength;
 		
 	}
-	
+	*/
 	
     
     return contigSetHead;
@@ -205,8 +208,8 @@ void GetContigIDandPosition(ContigSetHead * contigSetHead, int tempPosition, int
 
 void DeleteTailOfContigSet(ContigSetHead * contigSetHead, int tailLength){
 	for(int i = 0; i < contigSetHead->contigCount; i++){
-		if(contigSetHead->contigSet[i].contigLength > 10*tailLength){
-			/*
+		if(contigSetHead->contigSet[i].shortContig == false){
+			
 			char * tempContig = (char *)malloc(sizeof(char)*(contigSetHead->contigSet[i].contigLength - 2*tailLength + 1));
 			strncpy(tempContig, contigSetHead->contigSet[i].contig + tailLength, contigSetHead->contigSet[i].contigLength - 2*tailLength);
 			tempContig[contigSetHead->contigSet[i].contigLength - 2*tailLength] = '\0';
@@ -215,10 +218,10 @@ void DeleteTailOfContigSet(ContigSetHead * contigSetHead, int tailLength){
 			tempContig = NULL;
 			contigSetHead->contigSet[i].contigLength = contigSetHead->contigSet[i].contigLength - 2*tailLength;
 			contigSetHead->allContigLength = contigSetHead->allContigLength - 2*tailLength;
-			*/
-			contigSetHead->contigSet[i].shortContig = false;
+			
+			//contigSetHead->contigSet[i].shortContig = false;
 		}else{
-			contigSetHead->contigSet[i].shortContig = true;
+			//contigSetHead->contigSet[i].shortContig = true;
 		}
 	}
 }
@@ -237,7 +240,25 @@ void DeleteArrayTwoElementList(ArrayTwoElementList * arrayTwoElementList){
 
 
 
-
+char * ReverseComplement(char * temp){
+    int len = strlen(temp);
+	char * rcTemp = (char *)malloc(sizeof(char)*(len + 1));
+    for(int i = 0; i < len; i++){
+        if(temp[i] == 'A' || temp[i] == 'a'){
+            rcTemp[len - 1 - i] = 'T';
+        }else if(temp[i] == 'T' || temp[i] == 't'){
+            rcTemp[len - 1 - i] = 'A';
+        }else if(temp[i] == 'G' || temp[i] == 'g'){
+            rcTemp[len - 1 - i] = 'C';
+        }else if(temp[i] == 'C' || temp[i] == 'c'){
+            rcTemp[len - 1 - i] = 'G';
+        }else if(temp[i] == 'N' || temp[i] == 'n'){
+            rcTemp[len - 1 - i] = 'N';
+        } 
+    }
+    rcTemp[len]='\0';
+    return rcTemp;
+}
 
 
 
