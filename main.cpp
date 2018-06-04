@@ -9,8 +9,6 @@
 #include <sys/stat.h>
 
 #include "contig.h"
-#include "read.h"
-#include "kmer.h"
 #include "aligningFromBam.h"
 #include "scaffoldgraph.h"
 #include "scaffolding.h"
