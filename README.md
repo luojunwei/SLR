@@ -1,5 +1,5 @@
 # SLR
-SLR is a tool for scaffolding using long reads.
+SLR is a scaffolding tool based on long reads and contig classification.
 License
 =========
 
@@ -37,7 +37,7 @@ Scaffolder: SLR
 ```
 2) Before installing and running
 ```
-	First, Please build and install Samtools and Bamtools. And add enviroment vairable BAMTOOLS_HOME which is the path of bamtools.
+	First, Please build and install BWA, Samtools and Bamtools. And add enviroment vairable BAMTOOLS_HOME which is the path of bamtools.
 ```
 3) Installing.
 ```
@@ -59,9 +59,9 @@ Scaffolder: SLR
 	<aligning.bam>:
 		The aligning result between the contigs and the long reads.
 	<output_directory>:
-		The directory of scaffolding result.
+		The output directory of scaffolding result.
 	<minimum_contig_length>: 
-		The contigs whose lengthes are larger than minimum_contig_length will be used for scaffolding. Default:2000
+		The contigs whose lengths are larger than minimum_contig_length will be used for scaffolding. Default:2000
 	<minimum_read_length>: 
-		The long reads whose lengthes are larger than minimum_read_length will be used for scaffolding. Default:3000
+		The long reads whose lengths are larger than minimum_read_length will be used for scaffolding. Default:3000
 ```
