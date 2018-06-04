@@ -18,11 +18,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see <http://www.gnu.org/licenses/>.
 
-Junwei Luo(luojunwei@hpu.edu.cn)
-College of Computer Science and Technology
-Henan Polytechnic University
-Jiaozuo
-454000
+Junwei Luo(luojunwei@hpu.edu.cn),
+College of Computer Science and Technology,
+Henan Polytechnic University,
+Jiaozuo,
+454000,
 China
 
 
