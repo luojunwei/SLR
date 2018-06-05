@@ -11,7 +11,6 @@
 
 
 #include "contig.h"
-#include "read.h"
 #include "aligningFromBam.h"
 
 using namespace std;
