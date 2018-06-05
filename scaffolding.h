@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "contig.h"
-#include "read.h"
 #include "aligningFromBam.h"
 #include "scaffoldgraph.h"
 #include "lp/lp_lib.h"
