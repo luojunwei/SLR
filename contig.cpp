@@ -22,7 +22,7 @@ ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold){
     contigSetHead->minContigCount = 0;
 	contigSetHead->minAllContigLength = 0;
     
-    int maxSize = 90000;
+    long int maxSize = 90000;
     char * contig = NULL;
     if(NULL == (contig = (char*)malloc(sizeof(char)*maxSize))){
         perror("malloc error!");
@@ -43,7 +43,7 @@ ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold){
     
     contigSetHead->contigSet = (Contig *)malloc(sizeof(Contig)*contigSetHead->contigCount);
 	contigSetHead->repeatContigIndex = (bool *)malloc(sizeof(bool)*contigSetHead->contigCount);
-    for(int i = 0; i < contigSetHead->contigCount; i++){
+    for(long int i = 0; i < contigSetHead->contigCount; i++){
         contigSetHead->contigSet[i].contig = NULL;
         contigSetHead->contigSet[i].contigLength = 0;
 		contigSetHead->contigSet[i].shortContig = false;
@@ -56,8 +56,8 @@ ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold){
         exit(0);
     }
     
-    int allocateLength = 0;
-    int contigIndex = -1;
+    long int allocateLength = 0;
+    long int contigIndex = -1;
     while((fgets(contig, maxSize, fp)) != NULL){ 
        
        if(contig[0] == '>'){  
@@ -76,11 +76,11 @@ ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold){
        }
        
        
-       int extendLength = strlen(contig);
+       long int extendLength = strlen(contig);
        if(contig[extendLength-1] == '\n'){
            extendLength--;
        }
-       int contigLength = 0;
+       long int contigLength = 0;
        char * tempContig = NULL;
        if(contigSetHead->contigSet[contigIndex].contig != NULL){
            if(contigSetHead->contigSet[contigIndex].contigLength + extendLength >= allocateLength){
@@ -113,62 +113,66 @@ ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold){
 	
 	contigSetHead->visited = (bool *)malloc(sizeof(bool)*contigSetHead->contigCount);
 	
-	for(int i = 0; i < contigSetHead->contigCount; i++){
+	for(long int i = 0; i < contigSetHead->contigCount; i++){
 		contigSetHead->visited[i] = false;
 		if(contigSetHead->contigSet[i].contigLength < contigLengthThreshold){
 			contigSetHead->contigSet[i].shortContig = true;
-			//contigSetHead->minContigCount++;
-			//contigSetHead->minAllContigLength =  contigSetHead->minAllContigLength + contigSetHead->contigSet[i].contigLength;
 		}else{
 			contigSetHead->contigSet[i].shortContig = false;
 		}
 	}
-	/*
-	if(contigSetHead->minContigCount > 0){
-		contigSetHead->minContigSet = (Contig *)malloc(sizeof(Contig)*contigSetHead->minContigCount);
-		for(int i = 0; i < contigSetHead->minContigCount; i++){
-			contigSetHead->minContigSet[i].contig = NULL;
-			contigSetHead->minContigSet[i].contigLength = 0;
-			contigSetHead->minContigSet[i].shortContig = false;
-			contigSetHead->minContigSet[i].realContigIndex = -1;
-		}
-		
-		Contig * tempContigSet = (Contig *)malloc(sizeof(Contig)*(contigSetHead->contigCount - contigSetHead->minContigCount));
-		for(int i = 0; i < contigSetHead->contigCount - contigSetHead->minContigCount; i++){
-			tempContigSet[i].contig = NULL;
-			tempContigSet[i].contigLength = 0;
-			tempContigSet[i].shortContig = false;
-			tempContigSet[i].realContigIndex = -1;
-		}
-		
-		int j = 0;
-		int t = 0;
-		for(int i = 0; i < contigSetHead->contigCount; i++){
-			if(contigSetHead->contigSet[i].contigLength < contigLengthThreshold){
-				contigSetHead->minContigSet[j].contig = contigSetHead->contigSet[i].contig;
-				contigSetHead->minContigSet[j].realContigIndex = i;
-				contigSetHead->contigSet[i].contig = NULL;
-				contigSetHead->minContigSet[j].contigLength =  contigSetHead->contigSet[i].contigLength;
-				j++;
-			}else{
-				tempContigSet[t].contig = contigSetHead->contigSet[i].contig;
-				tempContigSet[t].realContigIndex = i;
-				contigSetHead->contigSet[i].contig = NULL;
-				tempContigSet[t].contigLength =  contigSetHead->contigSet[i].contigLength;
-				t++;
-			}
-		}
-		
-		free(contigSetHead->contigSet);
-		contigSetHead->contigSet = tempContigSet;
-		contigSetHead->contigCount = t;
-		contigSetHead->allContigLength = contigSetHead->allContigLength - contigSetHead->minAllContigLength;
-		
-	}
-	*/
+	
 	
     
     return contigSetHead;
+}
+
+void SortContigSet(char * contigSetFile, char * sortContigSetFile){
+    
+	ContigSetHead * contigSetHead = GetContigSet(contigSetFile, 0);
+	
+	long int * sortIndex = (long int *)malloc(sizeof(long int)*contigSetHead->contigCount);
+	for(long int i = 0; i < contigSetHead->contigCount; i++){
+		sortIndex[i] = -1;
+	}
+	int maxIndex = -1;
+	int maxLength = -1;
+	bool token = false;
+	for(long int i = 0; i < contigSetHead->contigCount; i++){
+		maxIndex = -1;
+		maxLength = -1;
+		for(long int j = 0; j < contigSetHead->contigCount; j++){
+			token = false;
+			for(long int t = 0; t < contigSetHead->contigCount; t++){
+				if(sortIndex[t] == j){
+					token = true;
+					break;
+				}
+				if(sortIndex[t] == -1){
+					break;
+				}
+			}
+			if(token == true){
+				continue;
+			}
+			if(contigSetHead->contigSet[j].contigLength > maxLength){
+				maxLength = contigSetHead->contigSet[j].contigLength;
+				maxIndex = j;
+			}
+		}
+		sortIndex[i] = maxIndex;
+	}
+	
+	FILE * fp; 
+    if((fp = fopen(sortContigSetFile, "w")) == NULL){
+        printf("%s, does not exist!", sortContigSetFile);
+        exit(0);
+    }
+	for(long int i = 0; i < contigSetHead->contigCount; i++){
+		fprintf(fp, ">%ld\n", i);
+		fprintf(fp, "%s\n", contigSetHead->contigSet[sortIndex[i]].contig);
+	}
+	
 }
 
 void GetContigIDandPosition(ContigSetHead * contigSetHead, int tempPosition, int * P){
