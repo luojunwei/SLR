@@ -46,12 +46,12 @@ typedef struct Contig{
 
 typedef struct ContigSetHead{
 	Contig * contigSet;
-	int contigCount;
-	int allContigLength;
+	long int contigCount;
+	long int allContigLength;
 	bool * repeatContigIndex;
 	Contig * minContigSet;
-	int minContigCount;
-	int minAllContigLength;
+	long int minContigCount;
+	long int minAllContigLength;
 	bool * visited;
 	ContigSetHead(){
 		contigSet = NULL;
@@ -65,6 +65,8 @@ typedef struct ContigSetHead{
 
 
 ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold);
+
+void SortContigSet(char * contigSetFile, char * sortContigSetFile);
 
 void GetContigIDandPosition(ContigSetHead * contigSetHead, int tempPosition, int * P);
 
