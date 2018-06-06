@@ -1,5 +1,7 @@
 # SLR
+=========
 SLR is a scaffolding tool based on long reads and contig classification.
+=========
 License
 =========
 
