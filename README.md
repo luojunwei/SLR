@@ -37,7 +37,9 @@ Scaffolder: SLR
 ```
 2) Before installing and running
 ```
-    First, Please build and install BWA, Samtools and Bamtools. And add enviroment vairable BAMTOOLS_HOME which is the path of bamtools.
+    First, Please build and install BWA, Samtools and Bamtools. 
+    And add enviroment vairable BAMTOOLS_HOME which is the path of bamtools.
+    Note that "/BAMTOOLS_HOME/include/bamtools/" should include two directories "api" and "shared".
 ```
 3) Installing.
 ```
@@ -63,4 +65,8 @@ Scaffolder: SLR
 	    The contigs whose lengths are larger than minimum_contig_length will be used for scaffolding. Default:2000
 	<minimum_read_length>: 
 	    The long reads whose lengths are larger than minimum_read_length will be used for scaffolding. Default:3000
+```
+5) Output.
+```
+    The output file "scaffold_set.fa" is the scaffolding result.
 ```
