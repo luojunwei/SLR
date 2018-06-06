@@ -38,16 +38,15 @@ Scaffolder: SLR
 2) Before installing and running
 ```
     First, Please build and install BWA, Samtools and Bamtools. 
-    And add enviroment vairable BAMTOOLS_HOME which is the path of bamtools.
-    Note that "/BAMTOOLS_HOME/include/bamtools/" should include two directories "api" and "shared".
+    And add enviroment vairable "BAMTOOLS_HOME_INCLUDE" which is the path which include two directories "api" and "shared".
 ```
 3) Installing.
 ```
     SLR should run on Linux operating sysetm with gcc. We test SLR using gcc4.6.3 on Ubuntu.
     Create a main directory (eg:SLR). Copy all source code to this directory.
 	cd SLR
-	export BAMTOOLS_HOME=/path_bamtools/
-	make
+	export BAMTOOLS_HOME_INCLUDE=/path_bamtools_include_api_shared/
+	make all
 ```
 4) Running.
 ```
