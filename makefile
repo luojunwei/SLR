@@ -3,7 +3,7 @@ CC=g++
 CPPFLAGS = -g -Wall -O3
 
 SLR: main.o contig.o aligningFromBam.o scaffoldgraph.o scaffolding.o
-	$(CC) -o $@ $^ ./lp/liblpsolve55.a -I $(BAMTOOLS_HOME_INCLUDE)/ $(BAMTOOLS_HOME)/lib/libbamtools.a -lm -ldl -lz
+	$(CC) -o $@ $^ ./lp/liblpsolve55.a -I $(BAMTOOLS_HOME_INCLUDE)/ $(BAMTOOLS_HOME_LIB)/libbamtools.a -lm -ldl -lz
 	
 SORT-Contig: contig.o sortContigSet.o 
 	$(CC) -o $@ $^
