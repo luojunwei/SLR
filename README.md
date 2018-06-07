@@ -39,8 +39,10 @@ Scaffolder: SLR
 2) Before installing and running
 ```
     First, Please build and install BWA, Samtools and Bamtools. 
-    And add enviroment vairable "BAMTOOLS_HOME_INCLUDE" which is the path which 
+    And add enviroment vairable "BAMTOOLS_HOME_INCLUDE" which is the path that 
     includes two directories "api" and "shared" of bamtools.
+    And add enviroment vairable "BAMTOOLS_HOME_LIB" which is the path that 
+    includes the file "libbamtools.a".
 ```
 3) Installing.
 ```
@@ -48,6 +50,7 @@ Scaffolder: SLR
     Create a main directory (eg:SLR). Copy all source code to this directory.
 	cd SLR
 	export BAMTOOLS_HOME_INCLUDE=/path_bamtools_include_api_shared/
+	export BAMTOOLS_HOME_LIB=/path_bamtools_lib_libbamtools.a/
 	make all
 ```
 4) Running.
