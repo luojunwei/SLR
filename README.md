@@ -56,7 +56,7 @@ Scaffolder: SLR
 4) Running.
 ```
     Step 1: bwa index contigs.fasta
-    Step 2: bwa mem -k11 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
+    Step 2: bwa mem -k8 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
     Step 3: samtools view -Sb aligning.sam > aligning.bam
     Step 4: SLR -c <contigs.fa> -r <aligning.bam> -p <output_directory> [-m <minimum_contig_length>] [-n <minimum_read_length>]
 	<contigs.fa>: 
