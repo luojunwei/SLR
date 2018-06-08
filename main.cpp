@@ -114,10 +114,10 @@ int main(int argc,char** argv) {
 	
 	char * scaffoldTagFileName = (char *)malloc(sizeof(char)*fileNameLen + 50);
 	strcpy(scaffoldTagFileName, resultOutPutDirectory);
-	strcat(scaffoldTagFileName, "/scaffoldSet_tag.fa");
+	strcat(scaffoldTagFileName, "/scaffold_tag");
 	OutPutScaffoldTag(scaffoldSetHead->scaffoldSet, scaffoldTagFileName);
 	strcpy(scaffoldTagFileName, resultOutPutDirectory);
-	strcat(scaffoldTagFileName, "/scaffoldSetFinal");
+	strcat(scaffoldTagFileName, "/scaffold");
 	OutPutScaffoldSet(scaffoldSetHead->scaffoldSet, contigSetHead, scaffoldTagFileName);
 		
 	
