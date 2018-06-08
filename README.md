@@ -34,7 +34,7 @@ Scaffolder: SLR
 ```
     SLR is an scaffolder which aims to determine the orientations and orders of contigs. 
     The contigs can be produced by any assembler.
-    The input data of SLR is the long reads (fasta format) and the contigs.
+    The input data of SLR is the long reads (fasta format) and the contigs (fasta format).
 ```
 2) Before installing and running
 ```
