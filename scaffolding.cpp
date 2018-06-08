@@ -1601,13 +1601,13 @@ void OutPutScaffoldSet(ScaffoldSet * scaffoldSet, ContigSetHead * contigSetHead,
     
     char * scaffoldTagFileName = new char[1000];
     strcpy(scaffoldTagFileName, result);
-    strcat(scaffoldTagFileName, "_Scaffold_Tag.fa");
+    strcat(scaffoldTagFileName, "_tag.fa");
     ofstream ocoutTag;
     ocoutTag.open(scaffoldTagFileName);
     
     char * scaffoldSetFileName = new char[1000];   
     strcpy(scaffoldSetFileName, result);
-    strcat(scaffoldSetFileName, "_ScaffoldSet.fa");
+    strcat(scaffoldSetFileName, "_set.fa");
     ofstream ocout1;
     ocout1.open(scaffoldSetFileName);
     j = 0;
