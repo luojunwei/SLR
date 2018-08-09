@@ -591,8 +591,43 @@ void RemoveCycleInScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead){
 			}
 		}
 		
+	}
+	
+}
+
+
+void RemoveCycleInScaffoldGraphTwoNode(ScaffoldGraphHead * scaffoldGraphHead){
+	ScaffoldGraphNode * tempEdge = NULL;
+	ScaffoldGraphNode * tempEdge1 = NULL;
+	ScaffoldGraphNode * tempEdgeNext = NULL;
+	
+	for(int i = 0; i < scaffoldGraphHead->scaffoldGraphNodeCount; i++){
 		
+		tempEdge = scaffoldGraphHead->scaffoldGraph[i].outEdge;
 		
+		while(tempEdge != NULL){
+			tempEdge1 = scaffoldGraphHead->scaffoldGraph[i].inEdge;
+			bool del = false;
+			while(tempEdge1 != NULL){
+				if(tempEdge1->nodeIndex == tempEdge->nodeIndex){
+					int index = tempEdge1->nodeIndex;
+					bool orientation = tempEdge->orientation;
+					bool orientation1 = tempEdge1->orientation;
+					scaffoldGraphHead->scaffoldGraph[i].inEdge = DeleteScaffoldGraphSpecialNode(scaffoldGraphHead->scaffoldGraph[i].inEdge, index, orientation1);
+					scaffoldGraphHead->scaffoldGraph[i].outEdge = DeleteScaffoldGraphSpecialNode(scaffoldGraphHead->scaffoldGraph[i].outEdge, index, orientation);
+					del = true;
+					break;
+				}
+				tempEdge1 = tempEdge1->next;
+			}
+			if(del == true){
+				tempEdge = scaffoldGraphHead->scaffoldGraph[i].outEdge;
+			}else{
+				tempEdge = tempEdge->next;
+			}
+			
+			
+		}
 	}
 	
 }
@@ -636,13 +671,13 @@ void AddEdgeInSimpleGraph(SimpleGraph * simpleGraph, long int simpleGraphNodeCou
 			if(leftOrientation == 1 && rightOrientation == 1){
 				simpleGraph[i].count3 ++;
 			}
-			if(leftOrientation == 1 && rightOrientation == 0){
+			if(leftOrientation == 0 && rightOrientation == 1){
 				simpleGraph[i].count4 ++;
 			}
 			if(leftOrientation == 0 && rightOrientation == 0){
 				simpleGraph[i].count1 ++;
 			}
-			if(leftOrientation == 0 && rightOrientation == 1){
+			if(leftOrientation == 1 && rightOrientation == 0){
 				simpleGraph[i].count2 ++;
 			}
 			break;
@@ -651,7 +686,7 @@ void AddEdgeInSimpleGraph(SimpleGraph * simpleGraph, long int simpleGraphNodeCou
 
 }
 
-bool * GetLineIndex(ContigSetHead * contigSetHead, char * file, char * line, int maxSize, long int & lineCount){
+SimpleGraph * GetLineIndex(ContigSetHead * contigSetHead, bool * lineIndex, char * file, char * line, int maxSize, long int & lineCount, long int & simpleGraphNodeCount){//the long reads support the two neigbor is large than a threshold, else line[i] = true; 
 	
 	FILE * fp; 
     if((fp = fopen(file, "r")) == NULL){
@@ -660,7 +695,7 @@ bool * GetLineIndex(ContigSetHead * contigSetHead, char * file, char * line, int
     }
 	char * p;
 	const char * split = ","; 
-	long int simpleGraphNodeCount = 0;
+	simpleGraphNodeCount = 0;
 	lineCount = 0;
 	while((fgets(line, maxSize, fp)) != NULL){ 
 		lineCount++;
@@ -673,11 +708,7 @@ bool * GetLineIndex(ContigSetHead * contigSetHead, char * file, char * line, int
 			simpleGraphNodeCount = simpleGraphNodeCount + count - 1;
 		}
 	}
-	bool * lineIndex = (bool *)malloc(sizeof(bool)*lineCount);
-	for(long int i = 0; i < lineCount; i++){
-		lineIndex[i] = false;
-		
-	}
+	
 	
 	SimpleGraph * simpleGraph = (SimpleGraph *)malloc(sizeof(SimpleGraph)*simpleGraphNodeCount);
 	for(long int i = 0; i < simpleGraphNodeCount; i++){
@@ -762,10 +793,8 @@ bool * GetLineIndex(ContigSetHead * contigSetHead, char * file, char * line, int
 		}
 		
 	}
-	cout<<edgeCount<<"--"<<alignReadCount<<endl;
-	cout<<"alignReadRatio:"<<edgeCount/alignReadCount<<endl;
+
 	int minEdgeCout = edgeCount/(10*alignReadCount);
-	
 	if((fp = fopen(file, "r")) == NULL){
         printf("%s, does not exist!", file);
         exit(0);
@@ -833,7 +862,7 @@ bool * GetLineIndex(ContigSetHead * contigSetHead, char * file, char * line, int
 							lineIndex[lineCount - 1] = true;
 						}
 					}
-					if(startOrientation == 1 && endOrientation == 0){
+					if(startOrientation == 0 && endOrientation == 1){
 						if(simpleGraph[i].count4 <= minEdgeCout){
 							lineIndex[lineCount - 1] = true;
 						}
@@ -843,7 +872,7 @@ bool * GetLineIndex(ContigSetHead * contigSetHead, char * file, char * line, int
 							lineIndex[lineCount - 1] = true;
 						}
 					}
-					if(startOrientation == 0 && endOrientation == 1){
+					if(startOrientation == 1 && endOrientation == 0){
 						if(simpleGraph[i].count2 <= minEdgeCout){
 							lineIndex[lineCount - 1] = true;
 						}
@@ -860,28 +889,198 @@ bool * GetLineIndex(ContigSetHead * contigSetHead, char * file, char * line, int
 	}
 	
 	fclose(fp);
-
-	return lineIndex;
+	
+	return simpleGraph;
 }
 
+void GetGraphNeighbor(SimpleGraph * simpleGraph, ContigSetHead * contigSetHead, long int simpleGraphNodeCount){
+	for(int j = 0; j < contigSetHead->contigCount; j++){
+		int leftNeighborIndex = -1;
+		int rightNeighborIndex = -1;
+		int leftMax = 0;
+		int rightMax = 0;
+		int leftSecondMax = 0;
+		int rightSecondMax = 0;
+		int leftCount = 0;;
+		int rightCount = 0;
+		for(int i = 0; i < simpleGraphNodeCount; i++){
+			if(simpleGraph[i].leftIndex == -1){
+					break;
+			}
+			if(simpleGraph[i].leftIndex == j){
+				if(simpleGraph[i].count1 > 0){
+					if(rightMax < simpleGraph[i].count1){
+						rightMax = simpleGraph[i].count1;
+						rightNeighborIndex = simpleGraph[i].rightIndex;
+					}
+					rightCount++;
+				}
+				if(simpleGraph[i].count2 > 0){
+					if(rightMax < simpleGraph[i].count2){
+						rightMax = simpleGraph[i].count2;
+						rightNeighborIndex = simpleGraph[i].rightIndex;
+					}
+					rightCount++;
+				}
+				if(simpleGraph[i].count3 > 0){
+					if(leftMax < simpleGraph[i].count3){
+						leftMax = simpleGraph[i].count3;
+						leftNeighborIndex = simpleGraph[i].rightIndex;
+					}
+					leftCount++;
+				}
+				if(simpleGraph[i].count4 > 0){
+					if(leftMax < simpleGraph[i].count4){
+						leftMax = simpleGraph[i].count4;
+						leftNeighborIndex = simpleGraph[i].rightIndex;
+					}
+					leftCount++;
+				}
+			}
+			if(simpleGraph[i].rightIndex == j){
+				if(simpleGraph[i].count3 > 0){
+					if(rightMax < simpleGraph[i].count3){
+						rightMax = simpleGraph[i].count3;
+						rightNeighborIndex = simpleGraph[i].leftIndex;
+					}
+					rightCount++;
+				}
+				if(simpleGraph[i].count4 > 0){
+					if(leftMax < simpleGraph[i].count4){
+						leftMax = simpleGraph[i].count4;
+						leftNeighborIndex = simpleGraph[i].leftIndex;
+					}
+					leftCount++;
+				}
+				if(simpleGraph[i].count1 > 0){
+					if(leftMax < simpleGraph[i].count1){
+						leftMax = simpleGraph[i].count1;
+						leftNeighborIndex = simpleGraph[i].leftIndex;
+					}
+					leftCount++;
+				}
+				if(simpleGraph[i].count2 > 0){
+					if(rightMax < simpleGraph[i].count2){
+						rightMax = simpleGraph[i].count2;
+						rightNeighborIndex = simpleGraph[i].leftIndex;
+					}
+					rightCount++;
+				}
+			}
+			
+		}
+		
+		if(leftCount <=1 && rightCount <=1){
+			continue;	
+		}
+		
+		
+		for(int i = 0; i < simpleGraphNodeCount; i++){
+			if(simpleGraph[i].leftIndex == -1){
+					break;
+			}
+			if(simpleGraph[i].leftIndex == j){
+				if(simpleGraph[i].count1 > 0){
+					if(rightSecondMax < simpleGraph[i].count1 && rightNeighborIndex != simpleGraph[i].rightIndex){
+						rightSecondMax = simpleGraph[i].count1;
+					}
+				}
+				if(simpleGraph[i].count2 > 0){
+					if(rightSecondMax < simpleGraph[i].count2 && rightNeighborIndex != simpleGraph[i].rightIndex){
+						rightSecondMax = simpleGraph[i].count2;
+					}
+				}
+				if(simpleGraph[i].count3 > 0){
+					if(leftSecondMax < simpleGraph[i].count3 && leftNeighborIndex != simpleGraph[i].rightIndex){
+						leftSecondMax = simpleGraph[i].count3;
+					}
+				}
+				if(simpleGraph[i].count4 > 0){
+					if(leftSecondMax < simpleGraph[i].count4 && leftNeighborIndex != simpleGraph[i].rightIndex){
+						leftSecondMax = simpleGraph[i].count4;
+					}
+				}
+			}
+			if(simpleGraph[i].rightIndex == j){
+				if(simpleGraph[i].count3 > 0){
+					if(rightSecondMax < simpleGraph[i].count3 && rightNeighborIndex != simpleGraph[i].leftIndex){
+						rightSecondMax = simpleGraph[i].count3;
+					}
+				}
+				if(simpleGraph[i].count4 > 0){
+					if(leftSecondMax < simpleGraph[i].count4 && leftNeighborIndex != simpleGraph[i].leftIndex){
+						leftSecondMax = simpleGraph[i].count4;
+					}
+				}
+				if(simpleGraph[i].count1 > 0){
+					if(leftSecondMax < simpleGraph[i].count1 && leftNeighborIndex != simpleGraph[i].leftIndex){
+						leftSecondMax = simpleGraph[i].count1;
+					}
+				}
+				if(simpleGraph[i].count2 > 0){
+					if(rightSecondMax < simpleGraph[i].count2 && rightNeighborIndex != simpleGraph[i].leftIndex){
+						rightSecondMax = simpleGraph[i].count2;
+					}
+				}
+			}
+			
+		}
 
-void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, char * file, char * line, int maxSize){
-	long int lineCount = 0;
-	bool * lineIndex = GetLineIndex(contigSetHead, file, line, maxSize, lineCount);
+		if(leftSecondMax > 0){
+			if(double(leftMax)/leftSecondMax < 6){
+				contigSetHead->visited[j] = true;
+			}
+		}
+		if(rightSecondMax > 0){
+			if(double(rightMax)/rightSecondMax < 6){
+				contigSetHead->visited[j] = true;
+			}
+		}
+		
+	}
 	
+}
+
+void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, char * file, char * line, int maxSize, FILE * fpUnique, FILE * fpAmbiguous){
+	long int lineCount = 0;
 	FILE * fp; 
     if((fp = fopen(file, "r")) == NULL){
         printf("%s, does not exist!", file);
         exit(0);
     }
-	
+	char * p;
 	const char * split = ","; 
-	char * p; 
-	int leftNeighbor[contigSetHead->contigCount];
-	int rightNeighbor[contigSetHead->contigCount];
+
+	while((fgets(line, maxSize, fp)) != NULL){ 
+		lineCount++;
+		
+	}
+	fclose(fp);
+	bool * lineIndex = (bool *)malloc(sizeof(bool)*lineCount);
+	for(long int i = 0; i < lineCount; i++){
+		lineIndex[i] = false;
+		
+	}
 	for(int i = 0; i < contigSetHead->contigCount; i++){
 		contigSetHead->visited[i] = false;
 		contigSetHead->repeatContigIndex[i] = false;
+	}
+	long int simpleGraphNodeCount = 0;
+	SimpleGraph * simpleGraph = GetLineIndex(contigSetHead, lineIndex, file, line, maxSize, lineCount, simpleGraphNodeCount);
+	
+	GetGraphNeighbor(simpleGraph, contigSetHead, simpleGraphNodeCount);
+	 
+    if((fp = fopen(file, "r")) == NULL){
+        printf("%s, does not exist!", file);
+        exit(0);
+    }
+
+	
+	int leftNeighbor[contigSetHead->contigCount];
+	int rightNeighbor[contigSetHead->contigCount];
+	for(int i = 0; i < contigSetHead->contigCount; i++){
+		//contigSetHead->visited[i] = false;
+		//contigSetHead->repeatContigIndex[i] = false;
 		leftNeighbor[i] = -1;
 		rightNeighbor[i] = -1;
 	}
@@ -914,55 +1113,45 @@ void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * con
 				if(a/4 < count-1 && a/4 > 0){
 					contigSetHead->repeatContigIndex[atoi(p)] = true;
 				}
-				
-				
 			}
-			if(a%4 == 3){
-				previousOrientation = orientation;
-				orientation = atoi(p);
-
-				if(contigIndex != -1 && previousContigIndex != -1){
-					if(previousOrientation == 1){
-						if(rightNeighbor[previousContigIndex] == -1){
-							rightNeighbor[previousContigIndex] = contigIndex;
-						}else if(rightNeighbor[previousContigIndex] != -1 && rightNeighbor[previousContigIndex] != contigIndex){
-							contigSetHead->visited[previousContigIndex] = true;
-						}
-					}else{
-						if(leftNeighbor[previousContigIndex] == -1){
-							leftNeighbor[previousContigIndex] = contigIndex;
-						}else if(leftNeighbor[previousContigIndex] != -1 && leftNeighbor[previousContigIndex] != contigIndex){
-							contigSetHead->visited[previousContigIndex] = true;
-						}
-					
-					}
-					if(orientation == 1){
-						if(leftNeighbor[contigIndex] == -1){
-							leftNeighbor[contigIndex] = previousContigIndex;
-						}else if(leftNeighbor[contigIndex] != -1 && leftNeighbor[contigIndex] != previousContigIndex){
-							contigSetHead->visited[contigIndex] = true;
-						}
-					}else{
-						if(rightNeighbor[contigIndex] == -1){
-							rightNeighbor[contigIndex] = previousContigIndex;
-						}else if(rightNeighbor[contigIndex] != -1 && rightNeighbor[contigIndex] != previousContigIndex){
-							contigSetHead->visited[contigIndex] = true;
-						}
-					}
-				}
-			}
+			
 			a++;
 		}
 	}
-
-	
 	fclose(fp);
+	
+	for(int i = 0; i < contigSetHead->contigCount; i++){
+		if(contigSetHead->contigSet[i].shortContig == true){
+			fprintf(fpAmbiguous, ">%d\n", i);
+			fprintf(fpAmbiguous, "%s\n", contigSetHead->contigSet[i].contig);
+			continue;
+		}
+		
+		if(contigSetHead->visited[i] == true && contigSetHead->repeatContigIndex[i] == true){
+			fprintf(fpAmbiguous, ">%d\n", i);
+			fprintf(fpAmbiguous, "%s\n", contigSetHead->contigSet[i].contig);
+		}else{
+			fprintf(fpUnique, ">%d\n", i);
+			fprintf(fpUnique, "%s\n", contigSetHead->contigSet[i].contig);
+		}
+	}
+	fflush(fpAmbiguous);
+	fflush(fpUnique);
+	
+	
 	if((fp = fopen(file, "r")) == NULL){
         printf("%s, does not exist!", file);
         exit(0);
     }
 	int readIndex = 0;
+	lineCount = 0;
 	while((fgets(line, maxSize, fp)) != NULL){ 
+		
+		
+		lineCount ++;
+		if(lineIndex[lineCount - 1] == true){
+			continue;
+		}
 		p = strtok(line,split);
 		
 		int count = atoi(p);
@@ -1011,7 +1200,8 @@ void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * con
 					}else{
 						min = startOverlapLength;
 					}
-			
+					contigSetHead->contigSet[startContigIndex].uniqueContig = true;
+					contigSetHead->contigSet[endContigIndex].uniqueContig = true;
 					InsertOutOrInEdge(scaffoldGraphHead, readIndex, startContigIndex, startOrientation, endContigIndex, endOrientation, distance, min);
 					distance = distance1;
 					startContigIndex = endContigIndex;
@@ -1038,6 +1228,88 @@ void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * con
 }
 
 
+void GetScaffoldGraphNonUniqueLocalScaffold(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, char * file, char * line, int maxSize){
+	
+	
+	FILE * fp; 
+    if((fp = fopen(file, "r")) == NULL){
+        printf("%s, does not exist!", file);
+        exit(0);
+    }
+	
+	const char * split = ","; 
+	char * p; 
+	
+	if((fp = fopen(file, "r")) == NULL){
+        printf("%s, does not exist!", file);
+        exit(0);
+    }
+	int readIndex = 0;
+	while((fgets(line, maxSize, fp)) != NULL){ 
+		p = strtok(line,split);
+		
+		int count = atoi(p);
+		
+		if(count <= 1){
+			readIndex++;
+			continue;
+		}
+
+		p = strtok(NULL,split);
+		int startContigIndex = atoi(p);
+		p = strtok(NULL,split);
+		int distance = atoi(p);
+		p = strtok(NULL,split);
+		bool startOrientation = atoi(p);
+		p = strtok(NULL,split);
+	 	int startOverlapLength = atoi(p);
+		
+		int a = 2;
+		while(a <= count){
+			p = strtok(NULL,split);
+			int endContigIndex = atoi(p);
+			p = strtok(NULL,split);
+			int distance1 = atoi(p);
+			p = strtok(NULL,split);
+			bool endOrientation = atoi(p);
+			p = strtok(NULL,split);
+	 		int endOverlapLength = atoi(p);
+			
+			
+			int min = 0;
+			if(startOverlapLength > endOverlapLength){
+				min = endOverlapLength;
+			}else{
+				min = startOverlapLength;
+			}
+			
+			
+			InsertOutOrInEdge(scaffoldGraphHead, readIndex, startContigIndex, startOrientation, endContigIndex, endOrientation, distance, min);
+	
+			int realEndContigIndex = endContigIndex;
+			
+			distance = distance1;
+			startContigIndex = endContigIndex;
+			startOrientation = endOrientation;
+			startOverlapLength = endOverlapLength;
+			
+			a++;
+		}
+		
+		
+		readIndex++;
+		
+	}
+	fclose(fp);
+}
+
+
+void OutputUniqueContigSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, char * file){
+	
+
+}
+
+
 void SortNodeOptimize(ContigSetHead * contigSetHead, char * file, char * line, int maxSize, FILE * longReadFileFP){
 	
 	
@@ -1055,6 +1327,7 @@ void SortNodeOptimize(ContigSetHead * contigSetHead, char * file, char * line, i
 	
 	int lineNum = -1;
 	while((fgets(line, maxSize, fp)) != NULL){ 
+		
 		lineNum++;
 		p = strtok(line,split);
 		int count = atoi(p);
@@ -1247,7 +1520,6 @@ int CountAverageReadCount(ScaffoldGraphHead * scaffoldGraphHead){
 		
 		
 	}
-	//cout<<"averageCount:"<<averageCount<<"--edgeCount:"<<edgeCount<<"--ration:"<<(double)averageCount/edgeCount<<endl;
 	return averageCount/edgeCount;
 
 
@@ -1272,13 +1544,8 @@ void OptimizeScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead 
 	RemoveCycleInScaffoldGraph(scaffoldGraphHead);
 	int readAverageCount = CountAverageReadCount(scaffoldGraphHead);
 	int minReadCount = readAverageCount/10;
-	
 	DeleteEdgeWithMinReadCount(scaffoldGraphHead, minReadCount);
-	
-	
-	
-	
-	
+
 }
 
 int GetEdgeNumber(ScaffoldGraphHead * scaffoldGraphHead, int index, bool out){
@@ -1317,6 +1584,15 @@ int DeleteSpecialScaffoldEdge(ScaffoldGraph * scaffoldGraph, long int index, lon
     scaffoldGraph[index].outEdge = DeleteScaffoldGraphSpecialNode(scaffoldGraph[index].outEdge, index1, 1);
 	scaffoldGraph[index].inEdge = DeleteScaffoldGraphSpecialNode(scaffoldGraph[index].inEdge, index1, 0);
 	scaffoldGraph[index].inEdge = DeleteScaffoldGraphSpecialNode(scaffoldGraph[index].inEdge, index1, 1);
+    
+}
+
+int ScaffoldGraphNullEdge(ScaffoldGraphHead * scaffoldGraphHead){
+    
+	for(long int i = 0; i < scaffoldGraphHead->scaffoldGraphNodeCount; i++){
+		scaffoldGraphHead->scaffoldGraph[i].outEdge = NULL;
+		scaffoldGraphHead->scaffoldGraph[i].inEdge = NULL;
+	}
     
 }
 

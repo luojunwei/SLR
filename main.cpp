@@ -17,6 +17,8 @@ using namespace std;
 
 
 int main(int argc,char** argv) {
+	int maxSize = 2000;
+	char * line = (char *)malloc(sizeof(char)*maxSize);
 	
 	char * resultOutPutDirectory = (char *)malloc(sizeof(char)*50);
 	strcpy(resultOutPutDirectory, "./SLR-OutPut-Directory/");
@@ -27,32 +29,32 @@ int main(int argc,char** argv) {
 	
 	char * contigSetFile = NULL;
 	char * longReadSetFile = NULL;
+	char * alignSefBamFile = NULL;
 	int ch = 0;
-	while ((ch = getopt(argc, argv, "c:r:p:m:n:")) != -1) {
+	while ((ch = getopt(argc, argv, "c:r:p:m:n:d:")) != -1) {
 		switch (ch) {
 			case 'c': contigSetFile = (char *)(optarg); break;
 			case 'r': longReadSetFile = (char *)(optarg); break;
 			case 'p': resultOutPutDirectory = (char *)optarg; break;
 			case 'm': contigLengthThreshold = atoi(optarg); break;
 			case 'n': readLengthCutOff = atoi(optarg); break;
+			case 'd': alignSefBamFile = (char *)(optarg); break;
 			default: break; 
 		}
 	}
-	
-	cout<<contigSetFile<<endl;
-	cout<<longReadSetFile<<endl;
-	cout<<resultOutPutDirectory<<endl;
-	cout<<contigLengthThreshold<<endl;
-	cout<<readLengthCutOff<<endl;
 	
 	if(opendir(resultOutPutDirectory) == NULL){  
 		mkdir(resultOutPutDirectory, 0777);       
     }
 	
-
 	int fileNameLen = strlen(resultOutPutDirectory);
 
 	ContigSetHead * contigSetHead = GetContigSet(contigSetFile, contigLengthThreshold);
+	
+	
+	if(alignSefBamFile != NULL){
+		DetectRepeativeContigInSet(contigSetHead, alignSefBamFile, 1);
+	}
 	
 	ScaffoldGraphHead * scaffoldGraphHead = (ScaffoldGraphHead *)malloc(sizeof(ScaffoldGraphHead));
 	scaffoldGraphHead->scaffoldGraph = (ScaffoldGraph *)malloc(sizeof(ScaffoldGraph)*contigSetHead->contigCount);
@@ -62,8 +64,7 @@ int main(int argc,char** argv) {
 		scaffoldGraphHead->scaffoldGraph[i].inEdge = NULL;
 	}
 	
-	int maxSize = 2000;
-	char * line = (char *)malloc(sizeof(char)*maxSize);
+	
 	
 	char * file2 = (char *)malloc(sizeof(char)*fileNameLen + 50);
 	strcpy(file2, resultOutPutDirectory);
@@ -93,29 +94,47 @@ int main(int argc,char** argv) {
         exit(0);
     }
 	
+	char * file6 = (char *)malloc(sizeof(char)*fileNameLen + 50);
+	strcpy(file6, resultOutPutDirectory);
+	strcat(file6, "/unique-contig-set.fa");
+	
+	FILE * fpUnique; 
+    if((fpUnique = fopen(file6, "w")) == NULL){
+        printf("%s, does not exist!", file6);
+        exit(0);
+    }
+	
+	char * file7 = (char *)malloc(sizeof(char)*fileNameLen + 50);
+	strcpy(file7, resultOutPutDirectory);
+	strcat(file7, "/ambiguous-contig-set.fa");
+	
+	FILE * fpAmbiguous; 
+    if((fpAmbiguous = fopen(file7, "w")) == NULL){
+        printf("%s, does not exist!", file7);
+        exit(0);
+    }
+	
 	
 	GetAligningResut(contigSetHead, longReadSetFile, file3, file2, readLengthCutOff);
 	
 	SortNodeOptimize(contigSetHead, file3, line, maxSize, fp4);
-	
+
 	SortNodeOptimize(contigSetHead, file2, line, maxSize, fp5);
 	
 	fflush(fp4);
 	
 	fflush(fp5);
 
-	GetScaffoldGraph(scaffoldGraphHead, contigSetHead, file4, line, maxSize);
+	GetScaffoldGraph(scaffoldGraphHead, contigSetHead, file4, line, maxSize, fpUnique, fpAmbiguous);
 	
 	OptimizeScaffoldGraph(scaffoldGraphHead, contigSetHead);
 	
 	OutputScaffoldGraph(scaffoldGraphHead);
-	
-	ScaffoldSetHead * scaffoldSetHead = GetScaffoldSet(scaffoldGraphHead, contigSetHead, file5, line, maxSize, resultOutPutDirectory);
+
+	ScaffoldSetHead * scaffoldSetHead = GetScaffoldSet(scaffoldGraphHead, contigSetHead, file5, line, maxSize, resultOutPutDirectory, file4);
 	
 	char * scaffoldTagFileName = (char *)malloc(sizeof(char)*fileNameLen + 50);
-	strcpy(scaffoldTagFileName, resultOutPutDirectory);
-	strcat(scaffoldTagFileName, "/scaffold_tag");
-	OutPutScaffoldTag(scaffoldSetHead->scaffoldSet, scaffoldTagFileName);
+	
 	strcpy(scaffoldTagFileName, resultOutPutDirectory);
 	strcat(scaffoldTagFileName, "/scaffold");
 	OutPutScaffoldSet(scaffoldSetHead->scaffoldSet, contigSetHead, scaffoldTagFileName);

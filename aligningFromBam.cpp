@@ -50,10 +50,10 @@ int GetAligningResut(ContigSetHead * contigSetHead, char * fileName, char * resu
     
     long int contigCount = bamReader.GetReferenceCount();
 	
-    
-    
+	long int minContigLengthAlign = 0;
+	
 	AligningResultHead * aligningResultHead = (AligningResultHead *)malloc(sizeof(AligningResultHead));
-	aligningResultHead->allocateAligningResultCount = 100;
+	aligningResultHead->allocateAligningResultCount = 1000;
 	aligningResultHead->aligningResultCount = 0;
 	aligningResultHead->aligningShortContigResultCount = 0;
 	aligningResultHead->aligningResult = (AligningResult *)malloc(sizeof(AligningResult)*aligningResultHead->allocateAligningResultCount);
@@ -67,6 +67,7 @@ int GetAligningResut(ContigSetHead * contigSetHead, char * fileName, char * resu
 		aligningResultHead->aligningResult[i].orientation = false;
 		aligningResultHead->aligningResult[i].leftSoftClip = (long int *)malloc(sizeof(long int)*2);
 		aligningResultHead->aligningResult[i].rightSoftClip = (long int *)malloc(sizeof(long int)*2);
+		aligningResultHead->aligningResult[i].quality = 0;
 		for(j = 0; j < 2; j ++){
 			aligningResultHead->aligningResult[i].leftSoftClip[j] = -1;
 			aligningResultHead->aligningResult[i].rightSoftClip[j] = -1;
@@ -74,24 +75,24 @@ int GetAligningResut(ContigSetHead * contigSetHead, char * fileName, char * resu
 	}
 	i = 0;
     while(bamReader.GetNextAlignment(alignment)){
-        if(!alignment.IsMapped() || alignment.MapQuality < 30){                                    
-            continue;
+        
+		readName = alignment.Name;
+		if(!alignment.IsMapped() || alignment.MapQuality < 20 || contigSetHead->contigSet[alignment.RefID].repeativeContig == true){                                    
+            previousReadName = readName;
+			continue;
         }
 		
 		
 		contigIndex = alignment.RefID;
 		readLength = alignment.Length;
-		if(contigSetHead->contigSet[contigIndex].contigLength < 500 || readLength < readLengthCutOff){
+		if(contigSetHead->contigSet[contigIndex].contigLength < minContigLengthAlign || readLength < readLengthCutOff){
+			previousReadName = readName;
 			continue;
 		}
 		
 		
-		readName = alignment.Name;
-		
 		if(previousReadName != "a" && readName != previousReadName){
-			
-			if(aligningResultHead->aligningResultCount > 1){
-
+			if(aligningResultHead->aligningResultCount + aligningResultHead->aligningShortContigResultCount > 1){
 				OutputAligningResultOneLine(aligningResultHead, contigSetHead, fp, fp1, readIndex, previousReadLength);
 				readIndex++;
 			}
@@ -99,7 +100,6 @@ int GetAligningResut(ContigSetHead * contigSetHead, char * fileName, char * resu
 			aligningResultHead->aligningResultCount = 0;
 			aligningResultHead->aligningShortContigResultCount = 0;
 		}
-		
 		if(GetAligningResultOneLine(aligningResultHead, alignment, contigSetHead, i) != false){
 			i++;
 		}
@@ -112,51 +112,53 @@ int GetAligningResut(ContigSetHead * contigSetHead, char * fileName, char * resu
 	fclose(fp);
 	fclose(fp1);
     
-    
 }
 
 bool GetAligningResultOneLine(AligningResultHead * aligningResultHead, BamAlignment alignment, ContigSetHead * contigSetHead, long int index){
 	
-	int maxAlignmentLength = 500;
+	int maxAlignmentLength = 150;
 	
 	std::vector< int > clipSizes;
 	std::vector< int > readPositions;
 	std::vector< int > genomePositions;
 	
-	
-	if(alignment.GetSoftClips(clipSizes, readPositions, genomePositions) != true){
-		return false;
-	}
-	
 	int readStartPosition = -1;
 	int readEndPosition = -1;
 	int contigStartPosition = -1;
 	int contigEndPosition = -1;
-
+	
 	long int contigIndex = alignment.RefID;
+	
 	long int contigLength = contigSetHead->contigSet[contigIndex].contigLength;
 	long int readLength = alignment.Length;
 	
-	if(clipSizes.size() == 1){
-		if(clipSizes[0] == readPositions[0]){
-			readStartPosition = readPositions[0];
-			readEndPosition = alignment.Length - 1;
-			contigStartPosition = genomePositions[0];
-			contigEndPosition = alignment.GetEndPosition();
-		}else{
-			readStartPosition = 0;
-			readEndPosition = alignment.Length - clipSizes[0] - 1;
-			contigStartPosition = alignment.Position;
-			contigEndPosition = alignment.GetEndPosition() - 1;
-		}
-	}else{
-		readStartPosition = readPositions[0];
-		readEndPosition = alignment.Length - clipSizes[1] - 1;
-		contigStartPosition = genomePositions[0];
+	
+	if(alignment.GetSoftClips(clipSizes, readPositions, genomePositions) != true){
+		readStartPosition = 0;
+		readEndPosition = alignment.Length - 1;
+		contigStartPosition = alignment.Position;
 		contigEndPosition = alignment.GetEndPosition() -1;
+	}else{
+		if(clipSizes.size() == 1){
+			if(clipSizes[0] == readPositions[0]){
+				readStartPosition = readPositions[0];
+				readEndPosition = alignment.Length - 1;
+				contigStartPosition = genomePositions[0];
+				contigEndPosition = alignment.GetEndPosition();
+			}else{
+				readStartPosition = 0;
+				readEndPosition = alignment.Length - clipSizes[0] - 1;
+				contigStartPosition = alignment.Position;
+				contigEndPosition = alignment.GetEndPosition() - 1;
+			}
+		}else{
+			readStartPosition = readPositions[0];
+			readEndPosition = alignment.Length - clipSizes[1] - 1;
+			contigStartPosition = genomePositions[0];
+			contigEndPosition = alignment.GetEndPosition() -1;
+		}
+	
 	}
-	
-	
 	
 	
 	if(readStartPosition < contigStartPosition){
@@ -196,9 +198,11 @@ bool GetAligningResultOneLine(AligningResultHead * aligningResultHead, BamAlignm
 	aligningResultHead->aligningResult[index].contigIndex = contigIndex;
 	aligningResultHead->aligningResult[index].overlapLength = aligningResultHead->aligningResult[index].contigEndPosition - aligningResultHead->aligningResult[index].contigStartPosition + 1;
 	aligningResultHead->aligningResult[index].orientation = !alignment.IsReverseStrand();
+	aligningResultHead->aligningResult[index].quality = alignment.MapQuality;
+
 	
-	if(aligningResultHead->aligningResult[index].overlapLength < 500){
-		return false;
+	if(aligningResultHead->aligningResult[index].overlapLength < maxAlignmentLength){
+		//return false;
 	}
 	
 	clipSizes.clear();
@@ -206,15 +210,10 @@ bool GetAligningResultOneLine(AligningResultHead * aligningResultHead, BamAlignm
 	genomePositions.clear();
 	
 	if(contigSetHead->contigSet[contigIndex].shortContig == true){
-		if(aligningResultHead->aligningResult[index].contigStartPosition == 0 && aligningResultHead->aligningResult[index].contigEndPosition == contigLength - 1){
-			aligningResultHead->aligningShortContigResultCount++;
-		}else{
-			return false;
-		}
+		aligningResultHead->aligningShortContigResultCount++;
 	}else{
 		aligningResultHead->aligningResultCount++;
 	}
-	
 	
 	return true;
 }
@@ -225,12 +224,15 @@ void OutputAligningResultOneLine(AligningResultHead * aligningResultHead, Contig
 	for(long int i = 0; i < aligningResultHead->aligningResultCount + aligningResultHead->aligningShortContigResultCount - 1; i++){
 		for(long int j = i + 1; j < aligningResultHead->aligningResultCount + aligningResultHead->aligningShortContigResultCount; j++){
 			if(aligningResultHead->aligningResult[i].contigIndex == aligningResultHead->aligningResult[j].contigIndex){
+				
 				return;
+				
 			}
 		}
 	}
-	
+
 	for(long int i = 0; i < aligningResultHead->aligningResultCount + aligningResultHead->aligningShortContigResultCount - 1; i++){
+		
 		for(long int j = i + 1; j < aligningResultHead->aligningResultCount + aligningResultHead->aligningShortContigResultCount; j++){
 			
 			if(aligningResultHead->aligningResult[i].readStartPosition > aligningResultHead->aligningResult[j].readStartPosition){
@@ -261,14 +263,20 @@ void OutputAligningResultOneLine(AligningResultHead * aligningResultHead, Contig
 				temp = aligningResultHead->aligningResult[i].orientation;
 				aligningResultHead->aligningResult[i].orientation = aligningResultHead->aligningResult[j].orientation;
 				aligningResultHead->aligningResult[j].orientation = temp;
+				
+				temp = aligningResultHead->aligningResult[i].quality;
+				aligningResultHead->aligningResult[i].quality = aligningResultHead->aligningResult[j].quality;
+				aligningResultHead->aligningResult[j].quality = temp;
 			}
 		}
 
 	}
-	
+
 	fprintf(fp, "%d,%ld", aligningResultHead->aligningResultCount, readLength);
 	fprintf(fp1, "%d,%ld", aligningResultHead->aligningResultCount + aligningResultHead->aligningShortContigResultCount, readLength);
+	
 	for(long int i = 0; i < aligningResultHead->aligningResultCount + aligningResultHead->aligningShortContigResultCount; i++){
+			
 		if(contigSetHead->contigSet[aligningResultHead->aligningResult[i].contigIndex].shortContig != true){
 			fprintf(fp, ",%d,%d,%d,%d,%d,%d,%d", aligningResultHead->aligningResult[i].contigIndex, aligningResultHead->aligningResult[i].readStartPosition, 
 				aligningResultHead->aligningResult[i].readEndPosition, aligningResultHead->aligningResult[i].contigStartPosition, 
@@ -284,6 +292,87 @@ void OutputAligningResultOneLine(AligningResultHead * aligningResultHead, Contig
 	fprintf(fp, ",\n");
 	fprintf(fp1, ",\n");
 	
+}
+
+LocalScaffoldSetHead * GetLocalScaffoldSetHead(char * file, char * line, int maxSize){
+	FILE * fp; 
+    if((fp = fopen(file, "r")) == NULL){
+        printf("%s, does not exist!", file);
+        exit(0);
+    }
+	
+	LocalScaffoldSetHead * localScaffoldSetHead = (LocalScaffoldSetHead *)malloc(sizeof(LocalScaffoldSetHead));
+	localScaffoldSetHead->localScaffoldNum = 0;
+	while((fgets(line, maxSize, fp)) != NULL){ 
+		localScaffoldSetHead->localScaffoldNum++;
+	}
+	localScaffoldSetHead->localScaffoldSet = (LocalScaffoldSet *)malloc(sizeof(LocalScaffoldSet)*localScaffoldSetHead->localScaffoldNum);
+	
+	fclose(fp);
+	
+	
+	if((fp = fopen(file, "r")) == NULL){
+        printf("%s, does not exist!", file);
+        exit(0);
+    }
+	
+	const char * split = ","; 
+	char * p; 
+	
+	int index = 0;
+	while((fgets(line, maxSize, fp)) != NULL){ 
+		p = strtok(line,split);
+
+		int count = atoi(p);
+		
+		localScaffoldSetHead->localScaffoldSet[index].contigNum = count;
+		localScaffoldSetHead->localScaffoldSet[index].distance = (int *)malloc(sizeof(int)*count);
+		localScaffoldSetHead->localScaffoldSet[index].contigIndex = (int *)malloc(sizeof(int)*count);
+		localScaffoldSetHead->localScaffoldSet[index].orientation = (int *)malloc(sizeof(int)*count);
+		localScaffoldSetHead->localScaffoldSet[index].overlapLength = (int *)malloc(sizeof(int)*count);
+		localScaffoldSetHead->localScaffoldSet[index].count = 0;
+		int a = 1;
+		while(a <= count){
+			p = strtok(NULL,split);
+			localScaffoldSetHead->localScaffoldSet[index].contigIndex[a - 1] = atoi(p);
+			p = strtok(NULL,split);
+			localScaffoldSetHead->localScaffoldSet[index].distance[a - 1] = atoi(p);
+			p = strtok(NULL,split);
+			localScaffoldSetHead->localScaffoldSet[index].orientation[a - 1] = atoi(p);
+			p = strtok(NULL,split);
+	 		localScaffoldSetHead->localScaffoldSet[index].overlapLength[a - 1] = atoi(p);
+			a++;
+		}
+		index++;
+		
+	}
+	
+	return localScaffoldSetHead;
+
+}
+
+void * GetLocalScaffoldSetHeadSingle(char * file, char * line, int maxSize, long int index){
+	LocalScaffoldSetHead * localScaffoldSetHead = GetLocalScaffoldSetHead(file, line, maxSize);
+	
+	for(int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+		bool token = false;
+		for(int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+			if(localScaffoldSetHead->localScaffoldSet[i].contigIndex[j] == index){
+				token = true;
+				break;
+			}
+		}
+		if(token == false){
+			continue;
+		}
+		for(int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+			cout<<localScaffoldSetHead->localScaffoldSet[i].contigIndex[j]<<","<<localScaffoldSetHead->localScaffoldSet[i].distance[j]<<","<<localScaffoldSetHead->localScaffoldSet[i].orientation[j]<<
+				","<<localScaffoldSetHead->localScaffoldSet[i].overlapLength[j]<<",";
+		}
+		cout<<endl;
+		
+	}
+
 }
 
 

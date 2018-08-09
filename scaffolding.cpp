@@ -177,7 +177,7 @@ long int DetermineOrientationOfContigs(ScaffoldGraph * scaffoldGraph, long int c
     for(i=0;i< contigCount;i++){
         set_binary(lp, i+1, TRUE);
     }
-	cout<<"cc"<<endl;
+	
     p--;
     
     
@@ -212,7 +212,6 @@ long int DetermineOrientationOfContigs(ScaffoldGraph * scaffoldGraph, long int c
     long int result = 0;
     for(i=contigCount+constraintNumber+1;i<constraintNumber+contigCount+p+1;i++){
         if(pv[i] == 0){
-           
             DeleteSpecialScaffoldEdge(scaffoldGraph, edgeLeftNode[i-contigCount-constraintNumber-1], edgeRightNode[i-contigCount-constraintNumber-1]);
             DeleteSpecialScaffoldEdge(scaffoldGraph, edgeRightNode[i-contigCount-constraintNumber-1], edgeLeftNode[i-contigCount-constraintNumber-1]);
             result++;
@@ -459,9 +458,8 @@ long int * IterativeDetermineOrderOfContigs(ContigSetHead * contigSetHead, Scaff
 				- pv[1+constraintNumber+edgeLeftNode[i-contigCount-constraintNumber-1]] 
 				- contigSetHead->contigSet[edgeLeftNode[i-contigCount-constraintNumber-1]].contigLength;
             double varD = double(labs(d - gapDistance[i-contigCount-constraintNumber-1]))/500;
-			
             if(varD>3){
-                DeleteSpecialScaffoldEdge(scaffoldGraph, edgeLeftNode[i-contigCount-constraintNumber-1], edgeRightNode[i-contigCount-constraintNumber-1]);
+				DeleteSpecialScaffoldEdge(scaffoldGraph, edgeLeftNode[i-contigCount-constraintNumber-1], edgeRightNode[i-contigCount-constraintNumber-1]);
             	DeleteSpecialScaffoldEdge(scaffoldGraph, edgeRightNode[i-contigCount-constraintNumber-1], edgeLeftNode[i-contigCount-constraintNumber-1]);
 				continue;
             }
@@ -496,8 +494,10 @@ long int * IterativeDetermineOrderOfContigs(ContigSetHead * contigSetHead, Scaff
 }
 
 
-ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, char * file, char * line, int maxSize, char * dir){
-    
+ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, char * file, char * line, int maxSize, char * dir, char * longContigfile){
+	
+	LocalScaffoldSetHead * localScaffoldSetHead = GetLocalScaffoldSetHead(file, line, maxSize);
+
 	bool * contigOrientation = (bool *)malloc(sizeof(bool)*scaffoldGraphHead->scaffoldGraphNodeCount);
 	long int * contigPosition = (long int *)malloc(sizeof(long int)*scaffoldGraphHead->scaffoldGraphNodeCount);
 	long int allContigLength = contigSetHead->allContigLength;
@@ -608,7 +608,8 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
 			}
     	}
     }
-    
+	
+	
 	ScaffoldGraph * scaffoldGraph = scaffoldGraphHead->scaffoldGraph;
     
     ScaffoldSetHead * scaffoldSetHead = (ScaffoldSetHead *)malloc(sizeof(ScaffoldSetHead));
@@ -621,12 +622,10 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
 	}
     
     for(int p = 0; p < scaffoldGraphHead->scaffoldGraphNodeCount; p++){
-        
-		
 		
 		i = sortNode[p];
 		
-        if(printIndex[i] == true || contigSetHead->contigSet[i].contigLength < 3000){
+        if(printIndex[i] == true || contigSetHead->contigSet[i].contigLength < 500 || (scaffoldGraph[i].outEdge == NULL && scaffoldGraph[i].inEdge == NULL)){
             continue;
         }
 		
@@ -748,12 +747,32 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
 		
                 
     }
-	char * tag0 = new char[400];
-	strcpy(tag0, dir);
-	strcat(tag0, "/tag1.fa");
-	OutPutScaffoldTag(scaffoldSetHead->scaffoldSet, tag0);
 	
-    for(i = 0; i < scaffoldGraphHead->scaffoldGraphNodeCount; i++){
+	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
+	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
+	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
+	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
+	
+	InsertRepeatContigToSequence1(contigSetHead, scaffoldSetHead, printIndex, file, line, maxSize);
+	
+	ScaffoldGraphHead * scaffoldGraphHead11 = (ScaffoldGraphHead *)malloc(sizeof(ScaffoldGraphHead));
+	scaffoldGraphHead11->scaffoldGraph = (ScaffoldGraph *)malloc(sizeof(ScaffoldGraph)*contigSetHead->contigCount);
+	scaffoldGraphHead11->scaffoldGraphNodeCount = contigSetHead->contigCount;
+	for(long int i = 0; i < scaffoldGraphHead11->scaffoldGraphNodeCount; i++){
+		scaffoldGraphHead11->scaffoldGraph[i].outEdge = NULL;
+		scaffoldGraphHead11->scaffoldGraph[i].inEdge = NULL;
+	}
+	
+	char * shortGraph = new char[400];
+	strcpy(shortGraph, dir);
+	strcat(shortGraph, "/graph.fa");
+	
+	OverlapHeadAndTailGraph(contigSetHead, scaffoldSetHead, localScaffoldSetHead, scaffoldGraphHead11, shortGraph, printIndex);
+	
+	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
+
+	
+	for(i = 0; i < scaffoldGraphHead->scaffoldGraphNodeCount; i++){
         if(printIndex[i] != 1){
             ScaffoldSet * tempScaffoldSet = (ScaffoldSet *)malloc(sizeof(ScaffoldSet));
             tempScaffoldSet->next = scaffoldSetHead->scaffoldSet;
@@ -768,36 +787,105 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
             
         }
     }
-	
-	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
-	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
-	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
-	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
-	
-	char * tag1 = new char[400];
-	strcpy(tag1, dir);
-	strcat(tag1, "/tag2.fa");
-	OutPutScaffoldTag(scaffoldSetHead->scaffoldSet, tag1);
-	
-	InsertRepeatContigToSequence1(contigSetHead, scaffoldSetHead, printIndex, file, line, maxSize);
-	
-	char * tag = new char[400];
-	strcpy(tag, dir);
-	strcat(tag, "/tag3.fa");
 
-	OutPutScaffoldTag(scaffoldSetHead->scaffoldSet, tag);
-	
     return scaffoldSetHead;
    
 }
 
+void * OutputLocalScaffoldNonUnique(ContigSetHead * contigSetHead, LocalScaffoldSetHead * localScaffoldSetHead, char * outputFile){
+	
+	FILE * fp; 
+    if((fp = fopen(outputFile, "w")) == NULL){
+        printf("%s, does not exist!", outputFile);
+        exit(0);
+    }
+	
+	
+	for(int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+		bool token = false;
+		int uniqueCount = 0;
+		for(int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+			if(contigSetHead->contigSet[localScaffoldSetHead->localScaffoldSet[i].contigIndex[j]].uniqueContig == true && j != 0 && j != localScaffoldSetHead->localScaffoldSet[i].contigNum - 1){
+				token = true;
+				break;
+			}
+			if(contigSetHead->contigSet[localScaffoldSetHead->localScaffoldSet[i].contigIndex[j]].uniqueContig == true){
+				uniqueCount++;
+			}
+		}
+		if(token == true){
+			continue;
+		}
+		fprintf(fp, "%d,", localScaffoldSetHead->localScaffoldSet[i].contigNum);
+		for(int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+			fprintf(fp, "%d,%d,%d,%d,", localScaffoldSetHead->localScaffoldSet[i].contigIndex[j], localScaffoldSetHead->localScaffoldSet[i].distance[j], 
+				   localScaffoldSetHead->localScaffoldSet[i].orientation[j], localScaffoldSetHead->localScaffoldSet[i].overlapLength[j]);
+		}
+		fprintf(fp, "\n"); 
+	}
+	
+	fflush(fp);
+	fclose(fp);
+	
+
+
+}
+
+
+ScaffoldSetHead *  LocalScaffoldToScaffoldSet(LocalScaffoldSetHead * localScaffoldSetHead, ContigSetHead * contigSetHead, char * dir){
+	
+    ScaffoldSetHead * scaffoldSetHead = (ScaffoldSetHead *)malloc(sizeof(ScaffoldSetHead));
+	scaffoldSetHead->scaffoldSet = NULL;
+	
+	for(int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+		
+		ScaffoldSet * tempScaffoldSet = (ScaffoldSet *)malloc(sizeof(ScaffoldSet));
+		tempScaffoldSet->next = scaffoldSetHead->scaffoldSet;
+		scaffoldSetHead->scaffoldSet = tempScaffoldSet;
+		tempScaffoldSet->contigSequence = NULL;
+		ContigSequence * last = tempScaffoldSet->contigSequence;
+		for(int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+			ContigSequence * tempContigSequence = (ContigSequence * )malloc(sizeof(ContigSequence));
+            tempContigSequence->index = localScaffoldSetHead->localScaffoldSet[i].contigIndex[j];
+			tempContigSequence->gapDistance = localScaffoldSetHead->localScaffoldSet[i].distance[j];
+            tempContigSequence->orientation = localScaffoldSetHead->localScaffoldSet[i].orientation[j];
+			tempContigSequence->next = NULL;
+			if(last == NULL){
+				tempScaffoldSet->contigSequence = tempContigSequence;
+			}else{
+				last->next = tempContigSequence;
+			}
+			last = tempContigSequence;
+		}
+	}
+	
+	
+	
+	
+	char * tag0 = new char[400];
+	strcpy(tag0, dir);
+	strcat(tag0, "/localScaffoldGraph.fa");
+	OutPutScaffoldTag(scaffoldSetHead->scaffoldSet, tag0);
+	
+	char * tag1 = new char[400];
+	strcpy(tag1, dir);
+	strcat(tag1, "/localScaffold_set.fa");
+	OutPutScaffoldSet(scaffoldSetHead->scaffoldSet, contigSetHead, tag1);
+	
+	return scaffoldSetHead;
+	
+}
+
+
+
 bool SearchInsertContigSequence(ScaffoldSetHead * tempInsertSequenceHead, int startIndex, int endIndex, int * contigIndex, int * distance, bool * orientation, int * overlapLength, int count){
 	ScaffoldSet * tempScaffoldSet = tempInsertSequenceHead->scaffoldSet;
 	while(tempScaffoldSet != NULL){
-		if(tempScaffoldSet->contigSequence == NULL || tempScaffoldSet->sequenceCount != labs(endIndex - startIndex) + 1){
+		if(tempScaffoldSet->contigSequence == NULL || tempScaffoldSet->contigNum != labs(endIndex - startIndex) + 1){
 			tempScaffoldSet = tempScaffoldSet->next;
 			continue;
 		}
+		
 		ContigSequence * tempContigSequence = tempScaffoldSet->contigSequence;
 		if(startIndex < endIndex){
 			bool token = false;
@@ -807,10 +895,7 @@ bool SearchInsertContigSequence(ScaffoldSetHead * tempInsertSequenceHead, int st
 					break;
 				}
 				tempContigSequence = tempContigSequence->next;
-				if(tempContigSequence == NULL){
-					token = true;
-					break;
-				}
+				
 			}
 			if(token == true){
 				return false;
@@ -818,18 +903,15 @@ bool SearchInsertContigSequence(ScaffoldSetHead * tempInsertSequenceHead, int st
 			tempScaffoldSet->sequenceCount++;
 			return true;
 		}
+		
 		if(endIndex < startIndex){
 			bool token = false;
-			for(int i = startIndex; i <= endIndex; i-- ){
+			for(int i = startIndex; i >= endIndex; i-- ){
 				if(tempContigSequence->index != contigIndex[i] || tempContigSequence->orientation == orientation[i]){
 					token = true;
 					break;
 				}
 				tempContigSequence = tempContigSequence->next;
-				if(tempContigSequence == NULL){
-					token = true;
-					break;
-				}
 			}
 			if(token == true){
 				return false;
@@ -837,19 +919,22 @@ bool SearchInsertContigSequence(ScaffoldSetHead * tempInsertSequenceHead, int st
 			tempScaffoldSet->sequenceCount++;
 			return true;
 		}
+		
 		tempScaffoldSet = tempScaffoldSet->next;
 	}
 	return false;
 
 }
 
-void InsertShortContigToSequence(ContigSequence * tempContigSequence, ContigSequence * preContigSequence, char * file, char * line, int maxSize){
+void InsertShortContigToSequence(ContigSequence * tempContigSequence, ContigSequence * preContigSequence, char * file, char * line, int maxSize, bool * printIndex, bool * lineIndex, long int lineCount){
 	FILE * fp; 
     if((fp = fopen(file, "r")) == NULL){
         printf("%s, does not exist!", file);
         exit(0);
     }
 	
+	long int index = -1;
+		
 	const char * split = ","; 
 	char * p; 
 	
@@ -861,8 +946,12 @@ void InsertShortContigToSequence(ContigSequence * tempContigSequence, ContigSequ
 	
 	ScaffoldSetHead * tempInsertSequenceHead = (ScaffoldSetHead *)malloc(sizeof(ScaffoldSetHead));
 	tempInsertSequenceHead->scaffoldSet = NULL;
-	cout<<"fff"<<endl;
+	
 	while((fgets(line, maxSize, fp)) != NULL){ 
+		index++;
+		if(lineIndex[index] == true){
+			continue;
+		}
 		p = strtok(line,split);
 
 		int count = atoi(p);
@@ -913,8 +1002,9 @@ void InsertShortContigToSequence(ContigSequence * tempContigSequence, ContigSequ
 		if(token == true){
 			continue;
 		}
-
+		
 		if(orientation[startIndex] == preContigSequence->orientation && orientation[endIndex] == tempContigSequence->orientation && endIndex > startIndex){
+			
 			ScaffoldSet * tempScaffoldSet = (ScaffoldSet *)malloc(sizeof(ScaffoldSet));
 			tempScaffoldSet->contigSequence = NULL;
 			tempScaffoldSet->sequenceCount = 1;
@@ -937,15 +1027,16 @@ void InsertShortContigToSequence(ContigSequence * tempContigSequence, ContigSequ
 			tempScaffoldSet->next = tempInsertSequenceHead->scaffoldSet;
 			tempInsertSequenceHead->scaffoldSet = tempScaffoldSet;
 		}
-
+		
 		if(orientation[startIndex] != preContigSequence->orientation && orientation[endIndex] != tempContigSequence->orientation && startIndex > endIndex){
+			
 			ScaffoldSet * tempScaffoldSet = (ScaffoldSet *)malloc(sizeof(ScaffoldSet));
 			tempScaffoldSet->contigSequence = NULL;
 			tempScaffoldSet->sequenceCount = 1;
 			tempScaffoldSet->contigNum = startIndex - endIndex + 1;
 			tempScaffoldSet->next = NULL;
 			ContigSequence * tempContigSequence0 = tempScaffoldSet->contigSequence;
-			for(int i = startIndex; i <= endIndex; i--){
+			for(int i = startIndex; i >= endIndex; i--){
 				ContigSequence * tempContigSequence1 = (ContigSequence *)malloc(sizeof(ContigSequence));
 				tempContigSequence1->index = contigIndex[i];
 				tempContigSequence1->orientation = !orientation[i];
@@ -964,7 +1055,9 @@ void InsertShortContigToSequence(ContigSequence * tempContigSequence, ContigSequ
 			}
 			tempScaffoldSet->next = tempInsertSequenceHead->scaffoldSet;
 			tempInsertSequenceHead->scaffoldSet = tempScaffoldSet;
+			
 		}
+		
 	}
 	
 	
@@ -988,12 +1081,15 @@ void InsertShortContigToSequence(ContigSequence * tempContigSequence, ContigSequ
 		}
 		tempScaffoldSet = tempScaffoldSet->next;
 	}
-
-	if(largeNum == 1 && tempContigSequence1 != NULL){
+	
+	if((maxCount > 1 || largeNum == 1) && tempContigSequence1 != NULL){
+		
+		preContigSequence->gapDistance = tempContigSequence1->gapDistance;
 		tempContigSequence1 = tempContigSequence1->next;
 		ContigSequence * first = preContigSequence;
 		while(tempContigSequence1 != NULL && tempContigSequence1->index != tempContigSequence->index){
 			ContigSequence * tempContigSequence2 = (ContigSequence *)malloc(sizeof(ContigSequence));
+			printIndex[tempContigSequence1->index] = true;
 			tempContigSequence2->index = tempContigSequence1->index;
 			tempContigSequence2->orientation = tempContigSequence1->orientation;
 			tempContigSequence2->gapDistance = tempContigSequence1->gapDistance;
@@ -1009,6 +1105,28 @@ void InsertShortContigToSequence(ContigSequence * tempContigSequence, ContigSequ
 }
 
 void InsertRepeatContigToSequence1(ContigSetHead * contigSetHead, ScaffoldSetHead * scaffoldSetHead, bool * printIndex, char * file, char * line, int maxSize){
+	long int lineCount = 0;
+	FILE * fp; 
+    if((fp = fopen(file, "r")) == NULL){
+        printf("%s, does not exist!", file);
+        exit(0);
+    }
+	char * p;
+	const char * split = ","; 
+
+	while((fgets(line, maxSize, fp)) != NULL){ 
+		lineCount++;
+		
+	}
+	fclose(fp);
+	bool * lineIndex = (bool *)malloc(sizeof(bool)*lineCount);
+	for(long int i = 0; i < lineCount; i++){
+		lineIndex[i] = false;
+		
+	}
+	long int simpleGraphNodeCount = 0;
+	GetLineIndex(contigSetHead, lineIndex, file, line, maxSize, lineCount, simpleGraphNodeCount);
+	
 	
 	ScaffoldSet * tempScaffoldSet = scaffoldSetHead->scaffoldSet;
 	int i = 0;
@@ -1027,7 +1145,8 @@ void InsertRepeatContigToSequence1(ContigSetHead * contigSetHead, ScaffoldSetHea
 		
 		while(tempContigSequence != NULL){
 			if(preContigSequence != NULL){
-				InsertShortContigToSequence(tempContigSequence, preContigSequence, file, line, maxSize);
+				
+				InsertShortContigToSequence(tempContigSequence, preContigSequence, file, line, maxSize, printIndex, lineIndex, lineCount);
 			}
 			preContigSequence = tempContigSequence;
 			tempContigSequence = tempContigSequence->next;
@@ -1039,158 +1158,650 @@ void InsertRepeatContigToSequence1(ContigSetHead * contigSetHead, ScaffoldSetHea
 	
 }
 
+ScaffoldGraphNode * GetOptimizeNodeIndex(ScaffoldGraphNode * scaffoldGraphNode){
+	
+	ScaffoldGraphNode * temp = scaffoldGraphNode;
+	ScaffoldGraphNode * tempOriginal = NULL;
+	int edgeNum = 0;
+	while(temp != NULL){
+		edgeNum++;
+		temp = temp->next;
+	}
+	if(edgeNum == 0){
+		return NULL;
+	}
+	if(edgeNum == 1){
+		return scaffoldGraphNode;
+	}
+	
+	int * count = (int *)malloc(sizeof(int)*edgeNum);
+	for(int i = 0; i < edgeNum; i++){
+		count[i] = 0;
+	}
+	
+	temp = scaffoldGraphNode;
+	int i = 0;
+	while(temp != NULL){
+		count[i] = temp->aligningReadCount;
+		i++;
+		temp = temp->next;
+	}
+	
+	int max = 0;
+	int maxCount = 0;
+	int maxIndex = -1;
+	temp = scaffoldGraphNode;
+	for(int i = 0; i < edgeNum; i++){
+		if(count[i] > max){
+			max = count[i];
+			maxIndex = i;
+			tempOriginal = temp;
+		}
+		temp = temp->next;
+	}
+	
+	temp = scaffoldGraphNode;
+	for(int i = 0; i < edgeNum; i++){
+		if(count[i] == max){
+			maxCount++;
+		}
+		temp = temp->next;
+	}
+	
+	if(maxCount > 1){
+		return NULL;
+	}
+	
+	int secondMax = 0;
+	int secondMaxIndex = -1;
+	
+	for(int i = 0; i < edgeNum; i++){
+		if(count[i] > secondMax && i != maxIndex){
+			secondMax = count[i];
+		}
+	}
+	
+	if(double(max)/secondMax < 1000){
+		return NULL;
+	}
+	
+	return tempOriginal;
+	
 
-void InsertRepeatContigToSequence(ContigSetHead * contigSetHead, ScaffoldSetHead * scaffoldSetHead, bool * printIndex, char * file, char * line, int maxSize){
+}
+
+void AddHeadToScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, ScaffoldSet * scaffoldSet, bool * printIndex){
 	
-	FILE * fp; 
-    if((fp = fopen(file, "r")) == NULL){
-        printf("%s, does not exist!", file);
-        exit(0);
-    }
 	
-	const char * split = ","; 
-	char * p; 
-	
-	int maxCount = 1000;
-	int contigIndex[maxCount];
-	int distance[maxCount];
-	bool orientation[maxCount];
-	int overlapLength[maxCount];
+	ScaffoldGraph * scaffoldGraph = scaffoldGraphHead->scaffoldGraph;
+
+    bool orientation = true;
 	
 	for(int i = 0; i < contigSetHead->contigCount; i++){
 		contigSetHead->visited[i] = false;
-		contigSetHead->repeatContigIndex[i] = false;
 	}
-	int lineCount = 0;
-	while((fgets(line, maxSize, fp)) != NULL){ 
-		p = strtok(line,split);
-		lineCount++;
-		int count = atoi(p);
+    orientation = scaffoldSet->contigSequence->orientation;
+	
+	
+	int i = scaffoldSet->contigSequence->index;
+	
+	
+	ScaffoldGraphNode * temp = NULL;    
+	if(scaffoldSet->contigSequence->orientation == 1){
+		temp = scaffoldGraph[i].inEdge;    
+	}else{
+		temp = scaffoldGraph[i].outEdge;  
+	}
+	    
+	
+	
+	while(temp != NULL){
+
+		temp = GetOptimizeNodeIndex(temp);
 		
-		if(count <= 2){
-			continue;
+		if(temp == NULL){
+			break;
 		}
+		int j = temp->nodeIndex; 
 		
-		for(int i = 0; i < maxCount; i++){
-			contigIndex[i] = -1;
-			distance[i] = -1;
-			orientation[i] = false;
-			overlapLength[i] = -1;
+		if(contigSetHead->visited[j] ==true){
+			break;
 		}
-		
-		if(count > maxCount){
-			continue;
-		}
-		
-		int a = 1;
-		while(a <= count){
-			p = strtok(NULL,split);
-			contigIndex[a - 1] = atoi(p);
-			p = strtok(NULL,split);
-			distance[a - 1] = atoi(p);
-			p = strtok(NULL,split);
-			orientation[a - 1] = atoi(p);
-			p = strtok(NULL,split);
-	 		overlapLength[a - 1] = atoi(p);
-			a++;
-		}
-		
-		ScaffoldSet * tempScaffoldSet = scaffoldSetHead->scaffoldSet;
-		while(tempScaffoldSet != NULL){
-        
-			ContigSequence * tempContigSequence = tempScaffoldSet->contigSequence;
-			ContigSequence * preContigSequence = NULL;
-        	if(tempContigSequence == NULL){
-				tempScaffoldSet = tempScaffoldSet->next;
-           	 	continue;
-       	 	}
 			
-        	bool token = false;
-        	while(tempContigSequence != NULL){
-				token = false;
-				if(tempContigSequence->index == contigIndex[0]){
-					if(tempContigSequence->next != NULL && tempContigSequence->next->index == contigIndex[count - 1]){
-						if((orientation[0] == orientation[count - 1] && tempContigSequence->orientation == tempContigSequence->next->orientation
-						   && ((orientation[0] == 1 && (contigSetHead->visited[contigIndex[0]] == false || contigSetHead->repeatContigIndex[contigIndex[count - 1]] == false))
-			 				|| (orientation[0] == 0 && (contigSetHead->repeatContigIndex[contigIndex[0]] == false || contigSetHead->visited[contigIndex[count - 1]] == false))))
-						  	|| (orientation[0] != orientation[count - 1] && tempContigSequence->orientation != tempContigSequence->next->orientation 
-							   && ((orientation[0] == 1 && (contigSetHead->visited[contigIndex[0]] == false || contigSetHead->visited[contigIndex[count - 1]] == false))
-							|| (orientation[0] == 0 && (contigSetHead->repeatContigIndex[contigIndex[0]] == false || contigSetHead->repeatContigIndex[contigIndex[count - 1]] == false))))){
-							ContigSequence * tempContigSequence2 = tempContigSequence;
-							for(int i = 1; i < count - 1; i++){
-								printIndex[contigIndex[i]] = true;
-								ContigSequence * tempContigSequence1 = (ContigSequence * )malloc(sizeof(ContigSequence));
-            					tempContigSequence1->index = contigIndex[i];
-								tempContigSequence1->gapDistance = distance[i];
-            					tempContigSequence1->orientation = orientation[i];
-								tempContigSequence1->next = tempContigSequence2->next;
-								tempContigSequence2->next = tempContigSequence1;
-								tempContigSequence2 = tempContigSequence1;
-							}
-							tempContigSequence->gapDistance = distance[0];
-							token = true;
-							if(orientation[0] == 1){
-								contigSetHead->visited[contigIndex[0]] = true;
-							}else{
-								contigSetHead->repeatContigIndex[contigIndex[0]] = true;
-							}
-							if(orientation[count - 1] == 1){
-								contigSetHead->visited[contigIndex[count - 1]] = true;
-							}else{
-								contigSetHead->repeatContigIndex[contigIndex[count - 1]] = true;
-							}
-							
-						}
-						
-					
-					}
-					if(preContigSequence != NULL && preContigSequence->index == contigIndex[count - 1]){
-						if((orientation[0] == orientation[count - 1] && tempContigSequence->orientation == preContigSequence->orientation
-						   && ((orientation[0] == 1 && (contigSetHead->visited[contigIndex[0]] == false || contigSetHead->repeatContigIndex[contigIndex[count - 1]] == false))
-			 				|| (orientation[0] == 0 && (contigSetHead->repeatContigIndex[contigIndex[0]] == false || contigSetHead->visited[contigIndex[count - 1]] == false))))
-						  	|| (orientation[0] != orientation[count - 1] && tempContigSequence->orientation != preContigSequence->orientation
-							   && ((orientation[0] == 1 && (contigSetHead->visited[contigIndex[0]] == false || contigSetHead->visited[contigIndex[count - 1]] == false))
-							|| (orientation[0] == 0 && (contigSetHead->repeatContigIndex[contigIndex[0]] == false || contigSetHead->repeatContigIndex[contigIndex[count - 1]] == false))))){
-							ContigSequence * tempContigSequence2 = tempContigSequence;
-							for(int i = 1; i < count - 1; i++){
-								printIndex[contigIndex[i]] = true;
-								ContigSequence * tempContigSequence1 = (ContigSequence * )malloc(sizeof(ContigSequence));
-            					tempContigSequence1->index = contigIndex[i];
-								tempContigSequence1->gapDistance = distance[i - 1];
-            					tempContigSequence1->orientation = !orientation[i];
-								tempContigSequence1->next = tempContigSequence2;
-								preContigSequence->next = tempContigSequence1;
-								tempContigSequence2 = tempContigSequence1;
-							}
-							preContigSequence->gapDistance = distance[count - 2];
-							token = true;
-							if(orientation[0] == 1){
-								contigSetHead->visited[contigIndex[0]] = true;
-							}else{
-								contigSetHead->repeatContigIndex[contigIndex[0]] = true;
-							}
-							if(orientation[count - 1] == 1){
-								contigSetHead->visited[contigIndex[count - 1]] = true;
-							}else{
-								contigSetHead->repeatContigIndex[contigIndex[count - 1]] = true;
-							}
-						}
-					
-					}
+		
+
+        contigSetHead->visited[j] = true;  
+            
+		printIndex[j] = true;
+		ContigSequence * tempContigSequence1 = (ContigSequence *)malloc(sizeof(ContigSequence));
+        tempContigSequence1->index = temp->nodeIndex;
+        tempContigSequence1->gapDistance = temp->gapDistance;
+        tempContigSequence1->next = scaffoldSet->contigSequence;
+        scaffoldSet->contigSequence = tempContigSequence1;
+		
+		if((orientation == 1 && temp->orientation == 1) || (orientation == 0 && temp->orientation == 0)){
+			temp = scaffoldGraph[j].inEdge; 
+			orientation = 1;
+		}else{
+			temp = scaffoldGraph[j].outEdge; 
+			orientation = 0;
+		}
+			
+        scaffoldSet->contigSequence->orientation = orientation;
+        
+    }
+	
+
+}
+
+void AddTailToScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, ScaffoldSet * scaffoldSet, bool * printIndex){
+	
+	ScaffoldGraphNode * temp = NULL;
+	ScaffoldGraph * scaffoldGraph = scaffoldGraphHead->scaffoldGraph;
+
+    bool orientation = true;
+	
+	for(int i = 0; i < contigSetHead->contigCount; i++){
+		contigSetHead->visited[i] = false;
+	}
+	ContigSequence * tempContigSequence = scaffoldSet->contigSequence;
+	while(tempContigSequence->next != NULL){
+		
+		tempContigSequence = tempContigSequence->next;
+	}
+	
+	
+    orientation = tempContigSequence->orientation;
+	
+	
+	int i = tempContigSequence->index;
+	
+	if(tempContigSequence->orientation == 0){
+		temp = scaffoldGraph[i].inEdge;    
+	}else{
+		temp = scaffoldGraph[i].outEdge;  
+	}
+	    
+	
+	while(temp != NULL){
+
+		temp = GetOptimizeNodeIndex(temp);
+		
+		if(temp == NULL){
+			break;
+		}
+		int j = temp->nodeIndex; 
+		
+		if(contigSetHead->visited[j] ==true){
+			break;
+		}
+			
+        contigSetHead->visited[j] = true;  
+            
+		printIndex[j] = true;
+		ContigSequence * tempContigSequence1 = (ContigSequence *)malloc(sizeof(ContigSequence));
+        tempContigSequence1->index = temp->nodeIndex;
+		tempContigSequence1->gapDistance = 0;
+        tempContigSequence->gapDistance = temp->gapDistance;
+        tempContigSequence->next = tempContigSequence1;
+		tempContigSequence1->next = NULL;
+    
+		
+		if((orientation == 1 && temp->orientation == 1) || (orientation == 0 && temp->orientation == 0)){
+			temp = scaffoldGraph[j].outEdge; 
+			orientation = 1;
+		}else{
+			temp = scaffoldGraph[j].inEdge; 
+			orientation = 0;
+		}
+			
+        tempContigSequence1->orientation = orientation;
+		tempContigSequence = tempContigSequence1;
+        
+    }
+	
+
+}
+
+void OverlapHeadAndTailGraph(ContigSetHead * contigSetHead, ScaffoldSetHead * scaffoldSetHead, LocalScaffoldSetHead * localScaffoldSetHead, ScaffoldGraphHead * scaffoldGraphHead, char * shortGraph, bool * printIndex){
+	long int maxSize = 100000;
+	char * line = new char[maxSize];
+	
+	ScaffoldSet * tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	ContigSequence * tempContigSequence = NULL;
+
+	tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	while(tempScaffoldSet != NULL){
+		int contigSequenceNum = GetContigSequenceNum(tempScaffoldSet->contigSequence);
+		tempScaffoldSet->contigNum = contigSequenceNum;
+		tempScaffoldSet = tempScaffoldSet->next;
+	}
+	
+	
+	bool * printIndex11 = (bool *)malloc(sizeof(bool)*localScaffoldSetHead->localScaffoldNum);
+	for(long int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+		printIndex11[i] = false;
+	}
+	int index = 0;
+	int localScaffoldCount = 0;
+	tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	while(tempScaffoldSet != NULL){
+		if(tempScaffoldSet->contigNum <= 1){
+			tempScaffoldSet = tempScaffoldSet->next;
+			index++;
+			continue;
+		}
+		
+		FILE * fp;
+    	if((fp = fopen(shortGraph, "w")) == NULL){
+        	printf("%s, does not exist!", shortGraph);
+        	exit(0);
+    	}
+		
+		long int headIndex = tempScaffoldSet->contigSequence->index;
+		localScaffoldCount = 0;
+		for(long int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+			
+			
+			bool token = false;
+			for(int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+				if(localScaffoldSetHead->localScaffoldSet[i].contigIndex[j] == headIndex){
+					token = true;
 					break;
 				}
-				if(token == true){
-					break;
-				}
-				preContigSequence = tempContigSequence;
-				tempContigSequence = tempContigSequence->next;
 			}
 			
-			tempScaffoldSet = tempScaffoldSet->next;
+			if(token == false){
+				continue;
+			}
+			localScaffoldCount++;
+			fprintf(fp, "%d,", localScaffoldSetHead->localScaffoldSet[i].contigNum);
+			for(int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+				fprintf(fp, "%d,%d,%d,%d,", localScaffoldSetHead->localScaffoldSet[i].contigIndex[j], localScaffoldSetHead->localScaffoldSet[i].distance[j],
+					       localScaffoldSetHead->localScaffoldSet[i].orientation[j], localScaffoldSetHead->localScaffoldSet[i].overlapLength[j]);
+			}
+			fprintf(fp, "\n"); 
+		
+			printIndex11[i] = true;
 		}
-	
+		
+		fflush(fp);
+		fclose(fp);
+		
+		if(localScaffoldCount <= 0){
+			tempScaffoldSet = tempScaffoldSet->next;
+			continue;
+		}
+		
+		GetScaffoldGraphNonUniqueLocalScaffold(scaffoldGraphHead, contigSetHead, shortGraph, line, maxSize);
+		
+		OptimizeScaffoldGraph(scaffoldGraphHead, contigSetHead);
+		DeleteEdgeWithMinReadCount(scaffoldGraphHead, 2);
+		
+		RemoveCycleInScaffoldGraphTwoNode(scaffoldGraphHead);
+		
+		AddHeadToScaffoldSet(scaffoldGraphHead, contigSetHead, tempScaffoldSet, printIndex);
+		
+		ScaffoldGraphNullEdge(scaffoldGraphHead);
+		
+		index ++;
+		tempScaffoldSet = tempScaffoldSet->next;
+		
 	}
 	
+	index = 0;
+	tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	while(tempScaffoldSet != NULL){
+		
+		if(tempScaffoldSet->contigNum <= 1){
+			tempScaffoldSet = tempScaffoldSet->next;
+			index++;
+			continue;
+		}
+		tempContigSequence = tempScaffoldSet->contigSequence;
+		while(tempContigSequence->next != NULL){
+			tempContigSequence = tempContigSequence->next;
+		}
+		
+		FILE * fp;
+    	if((fp = fopen(shortGraph, "w")) == NULL){
+        	printf("%s, does not exist!", shortGraph);
+        	exit(0);
+    	}
+		long int tailIndex = tempContigSequence->index;
+		localScaffoldCount = 0;
+		for(long int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+			if(printIndex11[i] == true){
+				//continue;
+			}
+			bool token = false;
+			for(int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+				if(localScaffoldSetHead->localScaffoldSet[i].contigIndex[j] == tailIndex){
+					token = true;
+					break;
+				}
+			}
+			if(token == false){
+				continue;
+			}
+			localScaffoldCount++;
+			fprintf(fp, "%d,", localScaffoldSetHead->localScaffoldSet[i].contigNum);
+			for(int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+				fprintf(fp, "%d,%d,%d,%d,", localScaffoldSetHead->localScaffoldSet[i].contigIndex[j], localScaffoldSetHead->localScaffoldSet[i].distance[j],
+					       localScaffoldSetHead->localScaffoldSet[i].orientation[j], localScaffoldSetHead->localScaffoldSet[i].overlapLength[j]);
+				
+			}
+			fprintf(fp, "\n"); 
+			
+			printIndex11[i] = true;
+		}
+		
+		fflush(fp);
+		fclose(fp);
+		
+		if(localScaffoldCount <= 0){
+			tempScaffoldSet = tempScaffoldSet->next;
+			continue;
+		}
+		
+		GetScaffoldGraphNonUniqueLocalScaffold(scaffoldGraphHead, contigSetHead, shortGraph, line, maxSize);
+		
+		OptimizeScaffoldGraph(scaffoldGraphHead, contigSetHead);
+		DeleteEdgeWithMinReadCount(scaffoldGraphHead, 2);
+		RemoveCycleInScaffoldGraphTwoNode(scaffoldGraphHead);
+		
+		AddTailToScaffoldSet(scaffoldGraphHead, contigSetHead, tempScaffoldSet, printIndex);
+		ScaffoldGraphNullEdge(scaffoldGraphHead);
+		index++;
+		tempScaffoldSet = tempScaffoldSet->next;
+	}
+	
+}
+
+
+
+void OutputUnUsedLocalScaffold(ContigSetHead * contigSetHead, ScaffoldSetHead * scaffoldSetHead, LocalScaffoldSetHead * localScaffoldSetHead, ScaffoldGraphHead * scaffoldGraphHead, char * file, char * line, long int maxSize){
+	ScaffoldSet * tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	ContigSequence * tempContigSequence = NULL;
+
+	tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	while(tempScaffoldSet != NULL){
+		int contigSequenceNum = GetContigSequenceNum(tempScaffoldSet->contigSequence);
+		tempScaffoldSet->contigNum = contigSequenceNum;
+		if(contigSequenceNum > 0){
+			tempScaffoldSet->contigIndex = (int *)malloc(sizeof(int)*contigSequenceNum);
+		}else{
+			tempScaffoldSet->contigIndex = NULL;
+		}
+		
+		tempScaffoldSet = tempScaffoldSet->next;
+	}
+	
+	tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	while(tempScaffoldSet != NULL){
+		tempContigSequence = tempScaffoldSet->contigSequence;
+		int p = 0;
+		while(tempContigSequence != NULL){
+			tempScaffoldSet->contigIndex[p] = tempContigSequence->index;
+			p++;
+			tempContigSequence = tempContigSequence->next;
+		}
+		tempScaffoldSet = tempScaffoldSet->next;
+	}
+	bool * printIndex11 = (bool *)malloc(sizeof(bool)*localScaffoldSetHead->localScaffoldNum);
+	for(long int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+		printIndex11[i] = false;
+	}
+	int * overlapResult = (int *)malloc(sizeof(int)*6);
+
+	tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	
+	int index = 0;
+	while(tempScaffoldSet != NULL){
+		
+		for(long int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+			
+			if(tempScaffoldSet->contigNum < localScaffoldSetHead->localScaffoldSet[i].contigNum || printIndex11[i] == true){
+				continue;
+			}
+			
+			bool overlap = DeterminOverlapInScaffolds(tempScaffoldSet->contigIndex, tempScaffoldSet->contigNum, localScaffoldSetHead->localScaffoldSet[i].contigIndex, 
+													  localScaffoldSetHead->localScaffoldSet[i].contigNum, overlapResult);
+			if(overlap == true){
+				if(overlapResult[0] == -2 || overlapResult[2] == -2){
+					printIndex11[i] = true;
+				}
+			}
+			
+		}
+		index++;
+		tempScaffoldSet = tempScaffoldSet->next;
+	}
+	
+	
+		
+	FILE * fp;
+    if((fp = fopen(file, "w")) == NULL){
+        printf("%s, does not exist!", file);
+        exit(0);
+    }
+		
+	for(long int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+		if(printIndex11[i] == false){
+			fprintf(fp, "%d,", localScaffoldSetHead->localScaffoldSet[i].contigNum);
+			for(int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+				fprintf(fp, "%d,%d,%d,%d,", localScaffoldSetHead->localScaffoldSet[i].contigIndex[j], localScaffoldSetHead->localScaffoldSet[i].distance[j],
+					       localScaffoldSetHead->localScaffoldSet[i].orientation[j], localScaffoldSetHead->localScaffoldSet[i].overlapLength[j]);
+			}
+			fprintf(fp, "\n"); 
+		}
+	}
+	
+	fflush(fp);
+	fclose(fp);
+	
+	
+	GetScaffoldGraphNonUniqueLocalScaffold(scaffoldGraphHead, contigSetHead, file, line, maxSize);
+	
+	OptimizeScaffoldGraph(scaffoldGraphHead, contigSetHead);
+	DeleteEdgeWithMinReadCount(scaffoldGraphHead, 1);
+	OutputScaffoldGraph(scaffoldGraphHead);
+}
+
+
+
+void OverlapHeadAndTail(ContigSetHead * contigSetHead, ScaffoldSetHead * scaffoldSetHead, bool * printIndex, LocalScaffoldSetHead * localScaffoldSetHead){
+
+	
+	ScaffoldSet * tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	ContigSequence * tempContigSequence = NULL;
+
+	tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	while(tempScaffoldSet != NULL){
+		int contigSequenceNum = GetContigSequenceNum(tempScaffoldSet->contigSequence);
+		tempScaffoldSet->contigNum = contigSequenceNum;
+		if(contigSequenceNum > 0){
+			tempScaffoldSet->contigIndex = (int *)malloc(sizeof(int)*contigSequenceNum);
+		}else{
+			tempScaffoldSet->contigIndex = NULL;
+		}
+		
+		tempScaffoldSet = tempScaffoldSet->next;
+	}
+	
+	tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	while(tempScaffoldSet != NULL){
+		tempContigSequence = tempScaffoldSet->contigSequence;
+		int p = 0;
+		while(tempContigSequence != NULL){
+			tempScaffoldSet->contigIndex[p] = tempContigSequence->index;
+			p++;
+			tempContigSequence = tempContigSequence->next;
+		}
+		tempScaffoldSet = tempScaffoldSet->next;
+	}
+
+	int * overlapResult = (int *)malloc(sizeof(int)*6);
+	
+	int tempNum = 100;
+	int * tailContigIndex = (int *)malloc(sizeof(int)*tempNum);
+	bool * tailOrientation = (bool *)malloc(sizeof(bool)*tempNum);
+	int * tailGapDistance = (int *)malloc(sizeof(int)*tempNum);
+	int * tailCount = (int *)malloc(sizeof(int)*tempNum);
+		
+	int * headContigIndex = (int *)malloc(sizeof(int)*tempNum);
+	bool * headOrientation = (bool *)malloc(sizeof(bool)*tempNum);
+	int * headGapDistance = (int *)malloc(sizeof(int)*tempNum);
+	int * headCount = (int *)malloc(sizeof(int)*tempNum);
+	
+	
+	for(int i = 0; i < tempNum; i++){
+		tailContigIndex[i] = -1;
+		tailOrientation[i] = false;
+		tailGapDistance[i] = 0;
+		tailCount[i] = 0;
+		
+		headContigIndex[i] = -1;
+		headOrientation[i] = false;
+		headGapDistance[i] = 0;
+		headCount[i] = 0;
+	}
+	
+	tempScaffoldSet = scaffoldSetHead->scaffoldSet;
+	
+	
+	int index = 0;
+	while(tempScaffoldSet != NULL){
+		
+		for(int i = 0; i < tempNum; i++){
+			tailContigIndex[i] = -1;
+			tailOrientation[i] = false;
+			tailGapDistance[i] = 0;
+			tailCount[i] = 0;
+
+			headContigIndex[i] = -1;
+			headOrientation[i] = false;
+			headGapDistance[i] = 0;
+			headCount[i] = 0;
+		}
+		
+		for(long int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+			bool overlap = DeterminOverlapInScaffolds(tempScaffoldSet->contigIndex, tempScaffoldSet->contigNum, localScaffoldSetHead->localScaffoldSet[i].contigIndex, 
+													  localScaffoldSetHead->localScaffoldSet[i].contigNum, overlapResult);
+			if(overlap == true){
+				
+				if(overlapResult[0] != -2 && overlapResult[2] != -2){
+					
+					if(overlapResult[5] == 0){
+						if(overlapResult[4] == 1){
+							
+							for(int j = 0; j < tempNum; j++){
+								if(tailContigIndex[j] == localScaffoldSetHead->localScaffoldSet[i].contigIndex[overlapResult[3] + 1]){
+									tailCount[j] ++;
+									break;
+								}else if(tailContigIndex[j] == -1){
+									tailContigIndex[j] = localScaffoldSetHead->localScaffoldSet[i].contigIndex[overlapResult[3] + 1];
+									tailOrientation[j] = localScaffoldSetHead->localScaffoldSet[i].orientation[overlapResult[3] + 1];
+									tailGapDistance[j] = localScaffoldSetHead->localScaffoldSet[i].distance[overlapResult[3]];
+									
+									tailCount[j] ++;
+									break;
+								}
+							}
+						}else{
+							
+							for(int j = 0; j < tempNum; j++){
+								int d =  overlapResult[3] -  overlapResult[2] + 1;
+								if(tailContigIndex[j] == localScaffoldSetHead->localScaffoldSet[i].contigIndex[localScaffoldSetHead->localScaffoldSet[i].contigNum - d - 1]){
+									tailCount[j] ++;
+									break;
+								}else if(tailContigIndex[j] == -1){
+									tailContigIndex[j] = localScaffoldSetHead->localScaffoldSet[i].contigIndex[localScaffoldSetHead->localScaffoldSet[i].contigNum - d - 1];
+									tailOrientation[j] = !localScaffoldSetHead->localScaffoldSet[i].orientation[localScaffoldSetHead->localScaffoldSet[i].contigNum - d - 1];
+									tailGapDistance[j] = localScaffoldSetHead->localScaffoldSet[i].distance[localScaffoldSetHead->localScaffoldSet[i].contigNum - d - 1];
+									
+									tailCount[j] ++;
+									break;
+								}
+							}
+							
+							
+							
+						
+						}
+					}else{
+						if(overlapResult[4] == 1){
+							
+							for(int j = 0; j < tempNum; j++){
+								if(headContigIndex[j] == localScaffoldSetHead->localScaffoldSet[i].contigIndex[overlapResult[0] - 1]){
+									headCount[j] ++;
+									break;
+								}else if(headContigIndex[j] == -1){
+									headContigIndex[j] = localScaffoldSetHead->localScaffoldSet[i].contigIndex[overlapResult[0] - 1];
+									headOrientation[j] = localScaffoldSetHead->localScaffoldSet[i].orientation[overlapResult[0] - 1];
+									headGapDistance[j] = localScaffoldSetHead->localScaffoldSet[i].distance[overlapResult[0] - 1];
+									headCount[j] ++;
+									break;
+								}
+							}
+						}else{
+							
+							for(int j = 0; j < tempNum; j++){
+								int d = overlapResult[1] - overlapResult[0] + 1;
+								if(headContigIndex[j] == localScaffoldSetHead->localScaffoldSet[i].contigIndex[d]){
+									
+									headCount[j] ++;
+									break;
+								}else if(headContigIndex[j] == -1){
+									headContigIndex[j] = localScaffoldSetHead->localScaffoldSet[i].contigIndex[d];
+									headOrientation[j] = !localScaffoldSetHead->localScaffoldSet[i].orientation[d];
+									headGapDistance[j] = localScaffoldSetHead->localScaffoldSet[i].distance[d];
+									headCount[j] ++;
+									
+									break;
+								}
+							}
+						
+						}
+					
+					}
+				}
+			}
+		}
+		
+		int max = -1;
+		int maxIndex = -1;
+		int ss = 0;
+		for(int i = 0; i < tempNum; i ++){
+			if(headCount[i] == 0){
+				break;
+			}
+			if(max < headCount[i]){
+				max = headCount[i];
+				maxIndex = i;
+			}
+			ss++;
+		}
+		
+		
+		max = -1;
+		maxIndex = -1;
+		ss = 0;
+		
+		for(int i = 0; i < tempNum; i ++){
+			if(tailCount[i] == 0){
+				break;
+			}
+			if(max < tailCount[i]){
+				max = tailCount[i];
+				maxIndex = i;
+			}
+			ss++;
+		}
+		
+		index++;
+		tempScaffoldSet = tempScaffoldSet->next;
+	}
 	
 }
 
@@ -1231,6 +1842,108 @@ int GetContigSequenceNum(ContigSequence * tempContigSequence){
 
 }
 
+void OptimizeScaffoldSetCongtigSequence1(ScaffoldSet * scaffoldSet, int contigNum){
+	
+	
+	ScaffoldSet * tempScaffoldSet = scaffoldSet;
+	ContigSequence * tempContigSequence = NULL;
+	
+	
+	tempScaffoldSet = scaffoldSet;
+	while(tempScaffoldSet != NULL){
+		int contigSequenceNum = GetContigSequenceNum(tempScaffoldSet->contigSequence);
+		tempScaffoldSet->contigNum = contigSequenceNum;
+		if(contigSequenceNum > 0){
+			tempScaffoldSet->contigIndex = (int *)malloc(sizeof(int)*contigSequenceNum);
+		}else{
+			tempScaffoldSet->contigIndex = NULL;
+		}
+		
+		tempScaffoldSet = tempScaffoldSet->next;
+	}
+	
+	tempScaffoldSet = scaffoldSet;
+	while(tempScaffoldSet != NULL){
+		tempContigSequence = tempScaffoldSet->contigSequence;
+		int p = 0;
+		while(tempContigSequence != NULL){
+			tempScaffoldSet->contigIndex[p] = tempContigSequence->index;
+			p++;
+			tempContigSequence = tempContigSequence->next;
+		}
+		tempScaffoldSet = tempScaffoldSet->next;
+	}
+	
+	tempScaffoldSet = scaffoldSet;
+	int i = 0;
+	
+	while(tempScaffoldSet != NULL){
+		ScaffoldSet * tempScaffoldSet1 = tempScaffoldSet->next;
+		int j = i + 1;
+		while(tempScaffoldSet1 != NULL){
+			if(i == j){
+				tempScaffoldSet1 = tempScaffoldSet1->next;
+				j++;
+				continue;
+			}
+			if(tempScaffoldSet->contigNum > tempScaffoldSet1->contigNum){
+				bool token = false;
+				for(int m = 0; m < tempScaffoldSet1->contigNum; m++){
+					token = false;
+					for(int n = 0; n < tempScaffoldSet->contigNum; n++){
+						token = false;
+						if(tempScaffoldSet->contigIndex[n] == tempScaffoldSet1->contigIndex[m]){
+							token = true;
+							break;
+						}
+					}
+					if(token == false){
+						break;
+					}
+				}
+				if(token != false){
+					tempScaffoldSet1->contigSequence = NULL;
+					tempScaffoldSet1->contigIndex = NULL;
+					tempScaffoldSet1->contigNum = 0;
+					
+				}
+				
+			}else{
+				
+				bool token = false;
+				for(int m = 0; m < tempScaffoldSet->contigNum; m++){
+					token = false;
+					for(int n = 0; n < tempScaffoldSet1->contigNum; n++){
+						token = false;
+						if(tempScaffoldSet1->contigIndex[n] == tempScaffoldSet->contigIndex[m]){
+							token = true;
+							break;
+						}
+					}
+					if(token == false){
+						break;
+					}
+					
+				}
+				if(token != false){
+					tempScaffoldSet->contigSequence = NULL;
+					tempScaffoldSet->contigIndex = NULL;
+					tempScaffoldSet->contigNum = 0;
+					
+				}
+				
+			
+			}
+			
+			tempScaffoldSet1 = tempScaffoldSet1->next;
+			j++;
+		}
+		tempScaffoldSet = tempScaffoldSet->next;
+		i++;
+	}
+
+}
+
 void OptimizeScaffoldSetCongtigSequence(ScaffoldSet * scaffoldSet, int contigNum){
 	
 	
@@ -1267,7 +1980,7 @@ void OptimizeScaffoldSetCongtigSequence(ScaffoldSet * scaffoldSet, int contigNum
 	int i = 0;
 	int * overlapResult = (int *)malloc(sizeof(int)*6);//0:left-start-position, 1:left-end-position, 2:right-start-position,3:right-end-position,4:left-orientation,5:previous two node is right?
 	while(tempScaffoldSet != NULL){
-		ScaffoldSet * tempScaffoldSet1 = tempScaffoldSet->next;
+		ScaffoldSet * tempScaffoldSet1 = scaffoldSet;
 		int j = 0;
 		while(tempScaffoldSet1 != NULL){
 			if(i == j){
@@ -1286,6 +1999,7 @@ void OptimizeScaffoldSetCongtigSequence(ScaffoldSet * scaffoldSet, int contigNum
 					tempScaffoldSet1->contigIndex = NULL;
 					tempScaffoldSet1->contigNum = 0;
 				}else{
+					
 					MergeContigSequence(tempScaffoldSet, tempScaffoldSet1, overlapResult);
 				}
 				break;
@@ -1409,28 +2123,30 @@ bool GetOverlapBetweenArray(int * leftIndex, int leftNum, int * rightIndex, int 
 	
 	for(int i = 0; i < leftNum; i++){
 		if(leftIndex[i] == rightIndex[0]){
-			for(int j = 0; j < rightNum; j++){
-				if(rightIndex[j] == leftIndex[leftNum - 1]){
-					if(leftNum - i == j + 1 && j + 1 >= 2){
-						overlapResult[0] = i;
-						overlapResult[1] = leftNum - 1;
-						overlapResult[2] = 0;
-						overlapResult[3] = j;
-						return true;
-					}
+			bool token = true;
+			int j = 0;
+			for(j = 0; j < rightNum && i + j < leftNum; j++){
+				if(leftIndex[i + j] != rightIndex[j]){
+					token = false;
+					break;
 				}
+			}
+			if(token == true && leftNum - i >= 2){
+				overlapResult[0] = i;
+				overlapResult[1] = leftNum - 1;
+				overlapResult[2] = 0;
+				overlapResult[3] = j - 1;
+				return true;
 			}
 		}
 	}
-	
-	
-	
-	
 	
 	return false;
 }
 
 void MergeContigSequence(ScaffoldSet * leftScaffoldSet, ScaffoldSet * rightScaffoldSet, int * overlapResult){
+	
+	
 	
 	if(overlapResult[5] == 1){
 		if(overlapResult[4] == 0){
@@ -1472,16 +2188,18 @@ void MergeContigSequence(ScaffoldSet * leftScaffoldSet, ScaffoldSet * rightScaff
 		}
 	
 	}else{
+
 		if(overlapResult[4] == 0){
 			ContigSequence * contigSequence = NULL;
 			int gapDistance = 0;
 			
 			int i = 0;
+			ContigSequence * lastContigSequence = rightScaffoldSet->contigSequence;
+			while(lastContigSequence->next != NULL){
+				lastContigSequence = lastContigSequence->next;
+			}
 			for(i = 0; i < overlapResult[0]; i++){
 				contigSequence = GetContigSequenceIndex(overlapResult[0] - i - 1, leftScaffoldSet->contigSequence);
-				if(i != 0){
-					rightScaffoldSet->contigSequence->gapDistance = contigSequence->gapDistance;
-				}
 				if(contigSequence == NULL){
 					return;
 				}
@@ -1489,11 +2207,12 @@ void MergeContigSequence(ScaffoldSet * leftScaffoldSet, ScaffoldSet * rightScaff
             	tempContigSequence->index = contigSequence->index;
 				tempContigSequence->gapDistance = 0;
             	tempContigSequence->orientation = !contigSequence->orientation;
-				tempContigSequence->next = rightScaffoldSet->contigSequence;
-				rightScaffoldSet->contigSequence = tempContigSequence;
+				tempContigSequence->next = NULL;
+				lastContigSequence->gapDistance = contigSequence->gapDistance;
+				lastContigSequence->next = tempContigSequence;
+				lastContigSequence = tempContigSequence;
 			}
-			contigSequence = GetContigSequenceIndex(i, leftScaffoldSet->contigSequence);
-			rightScaffoldSet->contigSequence->gapDistance = contigSequence->gapDistance;
+			
 			leftScaffoldSet->contigSequence = NULL;
 			leftScaffoldSet->contigIndex = NULL;
 			leftScaffoldSet->contigNum = 0;
@@ -1514,6 +2233,8 @@ void MergeContigSequence(ScaffoldSet * leftScaffoldSet, ScaffoldSet * rightScaff
 	
 	
 }
+
+
 
 void InverseArray(int * array, int num){
 	for(int i = 0; i < num/2; i++){
@@ -1639,7 +2360,7 @@ void OutPutScaffoldSet(ScaffoldSet * scaffoldSet, ContigSetHead * contigSetHead,
             tempGapDis = tempContigSequence->gapDistance;
             if(tempContigSequence->orientation==0){
                 char * tempChar1 = ReverseComplement(contigSet[tempContigSequence->index].contig);
-				if(tempContigSequence->gapDistance<=0 && tempContigSequence->next!=NULL){
+				if(tempContigSequence->gapDistance < 0 && tempContigSequence->next!=NULL){
 					
 					int contigLength = strlen(tempChar1);
 					if(contigLength + tempContigSequence->gapDistance < 0){
@@ -1660,7 +2381,7 @@ void OutPutScaffoldSet(ScaffoldSet * scaffoldSet, ContigSetHead * contigSetHead,
                 ocout1<<tempChar1;
 				free(tempChar1);
             }else{
-				if(tempContigSequence->gapDistance<=0 && tempContigSequence->next!=NULL){
+				if(tempContigSequence->gapDistance<0 && tempContigSequence->next!=NULL){
                 	
 					int contigLength = strlen(contigSet[tempContigSequence->index].contig);
 					
@@ -1675,14 +2396,16 @@ void OutPutScaffoldSet(ScaffoldSet * scaffoldSet, ContigSetHead * contigSetHead,
 					tempChar2[contigLength + tempContigSequence->gapDistance] = '\0';
 					
 					ocout1<<tempChar2;
+					free(tempChar2);
             	}else{
 					ocout1<<contigSet[tempContigSequence->index].contig;
 				}
                 
             }
             
-            if(tempContigSequence->gapDistance>0 && tempContigSequence->next!=NULL){
-                for(int tt = 0; tt<tempContigSequence->gapDistance; tt++){
+            if(tempContigSequence->gapDistance>=0 && tempContigSequence->next!=NULL){
+                int cc = tempContigSequence->gapDistance;
+				for(int tt = 0; tt<cc; tt++){
                     ocout1<<"N";
                 }
             }

@@ -47,6 +47,12 @@ typedef struct SimpleGraph{
 	int count4;
 }SimpleGraph;
 
+typedef struct GraphNeighbor{
+	int index;
+	int count;
+	GraphNeighbor * next;
+}GraphNeighbor;
+
 
 
 void InsertOutOrInEdge(ScaffoldGraphHead * scaffoldGraphHead, int readIndex, int leftNodeIndex, bool leftOrientation, int rightNodeIndex, bool rightOrientation, int gapDistance, int overlapLength);
@@ -63,7 +69,7 @@ void GetPathInLongRead(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * co
 
 void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, AligningResultHead * aligningResultHead, ContigGraphHead * contigGraphHead, char * file, char * line, int maxSize);
 
-void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, char * file, char * line, int maxSize);
+void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, char * file, char * line, int maxSize, FILE * fpUnique, FILE * fpAmbiguous);
 
 void DeleteEdgeWithMinReadCount(ScaffoldGraphHead * scaffoldGraphHead, int minReadCount);
 
@@ -95,8 +101,16 @@ bool GetOverlapEdgeIndex(ScaffoldGraphNode * left, ScaffoldGraphNode * right);
 
 void SortNodeOptimize(ContigSetHead * contigSetHead, char * file, char * line, int maxSize, FILE * longReadFileFP);
 
-bool * GetLineIndex(ContigSetHead * contigSetHead, char * file, char * line, int maxSize, long int & lineCount);
+SimpleGraph * GetLineIndex(ContigSetHead * contigSetHead, bool * lineIndex, char * file, char * line, int maxSize, long int & lineCount, long int & simpleGraphNodeCount);
 
 void AddEdgeInSimpleGraph(SimpleGraph * simpleGraph, long int simpleGraphNodeCount, int leftIndex, bool leftOrientation, int rightIndex, bool rightOrientation);
+
+void GetScaffoldGraphNonUniqueLocalScaffold(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, char * file, char * line, int maxSize);
+
+int ScaffoldGraphNullEdge(ScaffoldGraphHead * scaffoldGraphHead);
+
+void GetGraphNeighbor(SimpleGraph * simpleGraph, ContigSetHead * contigSetHead, long int simpleGraphNodeCount);
+
+void RemoveCycleInScaffoldGraphTwoNode(ScaffoldGraphHead * scaffoldGraphHead);
 
 #endif

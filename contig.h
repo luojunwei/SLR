@@ -10,6 +10,13 @@
 #include <stdint.h>
 #include <math.h>
 
+
+#include "api/BamMultiReader.h"
+#include "api/BamWriter.h"
+#include "api/BamReader.h"
+#include "api/BamAlignment.h"
+
+using namespace BamTools;
 using namespace std;
 
 typedef struct ArrayTwoElementList{
@@ -33,7 +40,10 @@ typedef struct Contig{
 	char * contig;
 	int contigLength;
 	bool shortContig;
+	bool uniqueContig;
 	int realContigIndex;
+	bool repeativeContig;
+	char * name;
 	ReadAligning * readAligning;
 	Contig(){
 		contig = NULL;
@@ -76,7 +86,7 @@ void DeleteArrayTwoElementList(ArrayTwoElementList * arrayTwoElementList);
 
 char * ReverseComplement(char * temp);
 
-
+void DetectRepeativeContigInSet(ContigSetHead * contigSetHead, char * bamFileName, float ratio);
 
 
 

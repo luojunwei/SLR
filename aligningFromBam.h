@@ -19,6 +19,21 @@
 using namespace std;
 using namespace BamTools;
 
+typedef struct LocalScaffoldSet{
+	int * contigIndex;
+	int * distance;
+	int * orientation;
+	int * overlapLength;
+	int contigNum;
+	int count;
+}LocalScaffoldSet;
+
+typedef struct LocalScaffoldSetHead{
+	LocalScaffoldSet * localScaffoldSet;
+	long int localScaffoldNum;
+}LocalScaffoldSetHead;
+
+
 typedef struct AligningResult{
 	int readStartPosition;
 	int readEndPosition;
@@ -29,6 +44,7 @@ typedef struct AligningResult{
 	bool orientation;
 	long int * leftSoftClip;
 	long int * rightSoftClip;
+	int quality;
 }AligningResult;
 
 
@@ -103,9 +119,13 @@ bool GetAligningResultOneLine(AligningResultHead * aligningResultHead, BamAlignm
 
 void OutputAligningResultOneLine(AligningResultHead * aligningResultHead, ContigSetHead * contigSetHead, FILE * fp, FILE * fp1, long int readIndex, long int readLength);
 
+LocalScaffoldSetHead * GetLocalScaffoldSetHead(char * file, char * line, int maxSize);
 
+void * GetLocalScaffoldSetHeadSingle(char * file, char * line, int maxSize, long int index);
 
+bool GetAligningResultOneLine(AligningResultHead * aligningResultHead, ContigSetHead * contigSetHead, int contigIndex, int contigStartPosition, int contigEndPosition, int contigLength, bool contigOrientation, int readStartPosition, int readEndPosition, int readLength, bool readOrientation, long int index);
 
+int GetContigIndex(ContigSetHead * contigSetHead, char * contigName);
 
 
 

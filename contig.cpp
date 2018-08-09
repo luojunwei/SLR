@@ -47,7 +47,10 @@ ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold){
         contigSetHead->contigSet[i].contig = NULL;
         contigSetHead->contigSet[i].contigLength = 0;
 		contigSetHead->contigSet[i].shortContig = false;
+		contigSetHead->contigSet[i].uniqueContig = false;
 		contigSetHead->contigSet[i].realContigIndex = -1;
+		contigSetHead->contigSet[i].repeativeContig = false;
+		contigSetHead->contigSet[i].name = NULL;
 		contigSetHead->repeatContigIndex[i] = false;
     }
     
@@ -61,7 +64,8 @@ ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold){
     while((fgets(contig, maxSize, fp)) != NULL){ 
        
        if(contig[0] == '>'){  
-           if(strlen(contig) == maxSize-1){              
+           
+		   if(strlen(contig) == maxSize-1){              
                while((fgets(contig, maxSize, fp)) != NULL){
                    if(strlen(contig) != maxSize-1){
                        break;
@@ -72,6 +76,10 @@ ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold){
 			   contigSetHead->allContigLength = contigSetHead->allContigLength + contigSetHead->contigSet[contigIndex].contigLength;
 		   }
 		   contigIndex++;
+		   int len = strlen(contig);
+		   contigSetHead->contigSet[contigIndex].name = (char *)malloc(sizeof(char)*len);
+		   strncpy(contigSetHead->contigSet[contigIndex].name, contig + 1, len - 1);
+		   contigSetHead->contigSet[contigIndex].name[len - 2] = '\0';
            continue;
        }
        
@@ -112,18 +120,17 @@ ContigSetHead * GetContigSet(char * contigSetFile, int contigLengthThreshold){
     fclose(fp);
 	
 	contigSetHead->visited = (bool *)malloc(sizeof(bool)*contigSetHead->contigCount);
-	
+	int num = 0;
 	for(long int i = 0; i < contigSetHead->contigCount; i++){
 		contigSetHead->visited[i] = false;
 		if(contigSetHead->contigSet[i].contigLength < contigLengthThreshold){
 			contigSetHead->contigSet[i].shortContig = true;
+			num++;
 		}else{
 			contigSetHead->contigSet[i].shortContig = false;
 		}
 	}
 	
-	
-    
     return contigSetHead;
 }
 
@@ -222,7 +229,6 @@ void DeleteTailOfContigSet(ContigSetHead * contigSetHead, int tailLength){
 			tempContig = NULL;
 			contigSetHead->contigSet[i].contigLength = contigSetHead->contigSet[i].contigLength - 2*tailLength;
 			contigSetHead->allContigLength = contigSetHead->allContigLength - 2*tailLength;
-			
 			//contigSetHead->contigSet[i].shortContig = false;
 		}else{
 			//contigSetHead->contigSet[i].shortContig = true;
@@ -262,6 +268,68 @@ char * ReverseComplement(char * temp){
     }
     rcTemp[len]='\0';
     return rcTemp;
+}
+
+
+void DetectRepeativeContigInSet(ContigSetHead * contigSetHead, char * bamFileName, float ratio){
+
+	
+    long int contigIndex = 0;
+	long int referenceIndex = -1;
+	string readName;
+	string previousReadName = "a";
+    
+    BamReader bamReader;
+    bamReader.Open(bamFileName);
+    BamAlignment alignment;
+	
+	long int contigCount = bamReader.GetReferenceCount();
+
+    while(bamReader.GetNextAlignment(alignment)){
+		readName = alignment.Name;
+		if(previousReadName != "a" && readName != previousReadName){
+			contigIndex++;
+		}
+		
+		referenceIndex = alignment.RefID;
+		if(referenceIndex == contigIndex){
+			previousReadName = readName;
+			continue;
+		}
+		const vector<CigarOp>& cigarData = alignment.CigarData;
+		vector<CigarOp>::const_iterator cigarBegin = cigarData.begin();
+		vector<CigarOp>::const_iterator cigarIter  = cigarBegin;
+		vector<CigarOp>::const_iterator cigarEnd   = cigarData.end();
+
+		double matchCount = 0;
+		double unMatchCount = 0;
+		for ( ; cigarIter != cigarEnd; ++cigarIter ) {
+			const CigarOp& op = (*cigarIter);
+			if(op.Type == 'M'){
+				matchCount = matchCount + op.Length;
+			}else{
+				unMatchCount = unMatchCount + op.Length;
+			}
+		}
+		
+		uint16_t value;
+		if(alignment.HasTag("NM")){
+			if(alignment.GetTag("NM", value)){
+				if(value != 0){
+					previousReadName = readName;
+					continue;
+				}
+			}
+		}
+		
+		if(matchCount/(matchCount + unMatchCount) >= ratio && matchCount + unMatchCount > 0){
+			contigSetHead->contigSet[contigIndex].repeativeContig = true;
+		}
+		previousReadName = readName;
+		
+    }
+
+
 }
 
 
