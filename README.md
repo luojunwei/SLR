@@ -34,7 +34,7 @@ Scaffolder: SLR
 ```
     SLR is an scaffolder which aims to determine the orientations and orders of contigs. 
     The contigs can be produced by any assembler.
-    The input data of SLR is the long reads (fasta format) and the contigs (fasta format).
+    The input data of SLR is the long reads (fasta format) and the contigs (fasta format). SLR can classify the contigs into unique contigs and ambiguous contigs.
 ```
 2) Before installing and running
 ```
@@ -56,7 +56,7 @@ Scaffolder: SLR
 4) Running.
 ```
     Step 1: bwa index contigs.fasta
-    Step 2: bwa mem -k8 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
+    Step 2: bwa mem -t8 -k11 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
     Step 3: samtools view -Sb aligning.sam > aligning.bam
     Step 4: SLR -c <contigs.fa> -r <aligning.bam> -p <output_directory> [-m <minimum_contig_length>] [-n <minimum_read_length>]
 	<contigs.fa>: 
@@ -72,5 +72,17 @@ Scaffolder: SLR
 ```
 5) Output.
 ```
-    The output file "scaffold_set.fa" is the scaffolding result.
+    The output file "scaffold_set.fa" is the scaffolding result. Unique contigs are in "unique-contig-set.fa". Ambigous contigs are in "ambiguous-contig-set.fa"
 ```
+6) Running other scaffolding tools based on contig classification
+```
+    Firstly, users can run other scaffolding tools using unique contig set and long read set, which generate a scaffolding result. Next users can insert ambiguous contigs to the scaffolds.
+    Step 1: Running SLR and Getting the contig set file: unique-contig-set.fa.
+    Setp 2: Running other scaffolding tools (SSPACE-LR, LINKS) based on unique-contig-set.fa, and Getting scaffolding result: temp-scaffold-set.fa.
+    Step 3: bwa index temp-scaffold-set.fa
+    Step 4: bwa mem temp-scaffold-set.fa unique-contig-set.fa > unique-contig.sam
+    Step 5: samtools view -Sb unique-contig.sam > unique-contig.bam
+    Step 6: bwa mem -t8 -k11 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
+    Step 7: samtools view -Sb aligning.sam > aligning.bam
+    Step 8: SLR-unique-ambiguous -c <contigs.fa> -r <aligning.bam> -u <unique-contig-set.fa> -s <temp-scaffold-set.fa> -b <unique-contig.bam> -p <output_directory> 
+
