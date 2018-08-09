@@ -36,8 +36,15 @@ int main(int argc,char** argv) {
 	char * uniqueContigScaffoldFile = NULL;
 	char * uniqueContigToScaffoldBamFile = NULL;
 	
+	int contigLengthIgnore = 0;
+	int minAlignmentScore = 20;
+	int minOverlapLength = 0;
+	int overlapContigCount = 2;
+	int minAlignmentRevised = 150;
+	int weightType = 1;
+	
 	int ch = 0;
-	while ((ch = getopt(argc, argv, "c:r:p:m:n:d:u:s:b:")) != -1) {
+	while ((ch = getopt(argc, argv, "c:r:p:m:n:d:u:s:b:t:v:w:x:y:z:")) != -1) {
 		switch (ch) {
 			case 'c': contigSetFile = (char *)(optarg); break;
 			case 'r': longReadSetFile = (char *)(optarg); break;
@@ -48,7 +55,12 @@ int main(int argc,char** argv) {
 			case 'u': uniqueContigSetFile = (char *)(optarg); break;
 			case 's': uniqueContigScaffoldFile = (char *)(optarg); break;
 			case 'b': uniqueContigToScaffoldBamFile = (char *)(optarg); break;
-			
+			case 't': weightType = atoi(optarg); break;
+			case 'v': contigLengthIgnore = atoi(optarg); break;
+			case 'w': minAlignmentScore = atoi(optarg); break;
+			case 'x': minOverlapLength = atoi(optarg); break;
+			case 'y': overlapContigCount = atoi(optarg); break;
+			case 'z': minAlignmentRevised = atoi(optarg); break;
 			default: break; 
 		}
 	}
@@ -61,6 +73,14 @@ int main(int argc,char** argv) {
 	int fileNameLen = strlen(resultOutPutDirectory);
 
 	ContigSetHead * contigSetHead = GetContigSet(contigSetFile, contigLengthThreshold);
+	contigSetHead->contigLengthIgnore = contigLengthIgnore;
+	contigSetHead->minAlignmentScore = minAlignmentScore;
+	contigSetHead->minOverlapLength = minOverlapLength;
+	contigSetHead->overlapContigCount = overlapContigCount;
+	contigSetHead->minAlignmentRevised = minAlignmentRevised;
+	contigSetHead->weightType = weightType;
+	
+	
 	
 	if(alignSefBamFile != NULL){
 		DetectRepeativeContigInSet(contigSetHead, alignSefBamFile, 1);
