@@ -58,17 +58,30 @@ Scaffolder: SLR
     Step 1: bwa index contigs.fasta
     Step 2: bwa mem -t8 -k11 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
     Step 3: samtools view -Sb aligning.sam > aligning.bam
-    Step 4: SLR -c <contigs.fa> -r <aligning.bam> -p <output_directory> [-m <minimum_contig_length>] [-n <minimum_read_length>]
-	<contigs.fa>: 
+    Step 4: SLR -c <contigs.fa> -r <aligning.bam> -p <output_directory> [options]
+	-c <contigs.fa>: 
 	    The file includes contigs produced by one assembler.
-	<aligning.bam>:
+	-r <aligning.bam>:
 	    The aligning result between the contigs and the long reads.
-	<output_directory>:
+	-p <output_directory>:
 	    The output directory of scaffolding result.
-	<minimum_contig_length>: 
-	    The contigs whose lengths are larger than minimum_contig_length will be used for scaffolding. Default:2000
-	<minimum_read_length>: 
+	-w <minimum_alignment_score>: 
+	    The alignments whose score is less than minimum_alignment_score will be ignored. Default:20
+	-x <minimum_alignment_length>: 
+	    The alignments whose alignment length is less than minimum_alignment_length will be ignored. Default:0
+	-z <minimum_alignment_revised_distance>: 
+	    If the distance between alignment position and revised alignment position is larger than minimum_alignment_revised_distance, the alignment will be ignored. Default:150
+	-v <minimum_contig_length>: 
+	    The contigs whose lengths are larger than minimum_contig_length will be used for scaffolding. Default:0
+	-n <minimum_read_length>: 
 	    The long reads whose lengths are larger than minimum_read_length will be used for scaffolding. Default:3000
+	-t <weight type>: 
+	    When it is equal to 1, the weight of each edge in scaffold graph is calculated based on overlap length. When it is equal to 0, the weight of each edge is calculated based on read count.Default:1
+	-m <contig_length_threshold>: 
+	    The contigs whose lengths are shorter than contig_length_threshold will be classified as ambiguous contigs. Default:2000
+	-y <overlapped_contig_count>: 
+	    Two scaffolds will be merged, if the number of overlpped contigs are larger than overlapped_contig_count. Default:2
+	
 ```
 5) Output.
 ```
