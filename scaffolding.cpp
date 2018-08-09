@@ -15,7 +15,8 @@
 #include "scaffoldgraph.h"
 #include "lp/lp_lib.h"
 
-
+int overlapContigCount = 2;
+int weightType = 1;
 
 long int DetermineOrientationOfContigs(ScaffoldGraph * scaffoldGraph, long int contigCount, bool * contigOrientation){
     
@@ -163,7 +164,11 @@ long int DetermineOrientationOfContigs(ScaffoldGraph * scaffoldGraph, long int c
                     edgeRightNode[p-1] = tempEdge->nodeIndex;
                     p++;
                     
-                    weight[p-2] = tempEdge->overlapLength;
+                    if(weightType == 1){
+						weight[p-2] = tempEdge->overlapLength;
+					}else{
+						weight[p-2] = tempEdge->aligningReadCount;
+					}
 					
                     index[i][tempEdge->nodeIndex] = true;
                     index[tempEdge->nodeIndex][i] = true;
@@ -396,7 +401,12 @@ long int * IterativeDetermineOrderOfContigs(ContigSetHead * contigSetHead, Scaff
                     colno[j] = contigCount + p;
                     row[j++] = 1;
                     add_constraintex(lp, j, row, colno, GE, 0);
-                    weight[p-1] = tempEdge->overlapLength;
+					if(weightType == 1){
+						weight[p-1] = tempEdge->overlapLength;
+					}else{
+						weight[p-1] = tempEdge->aligningReadCount;
+					}
+                    
                     gapDistance[p-1] = tempEdge->gapDistance;
                     p++;
                     constraintNumber = constraintNumber + 4; 
@@ -501,7 +511,8 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
 	bool * contigOrientation = (bool *)malloc(sizeof(bool)*scaffoldGraphHead->scaffoldGraphNodeCount);
 	long int * contigPosition = (long int *)malloc(sizeof(long int)*scaffoldGraphHead->scaffoldGraphNodeCount);
 	long int allContigLength = contigSetHead->allContigLength;
-
+	weightType = contigSetHead->weightType;
+	
 	DetermineOrientationOfContigs(scaffoldGraphHead->scaffoldGraph, scaffoldGraphHead->scaffoldGraphNodeCount, contigOrientation);
 
 	IterativeDetermineOrderOfContigs(contigSetHead, scaffoldGraphHead->scaffoldGraph, scaffoldGraphHead->scaffoldGraphNodeCount, contigOrientation, contigPosition, allContigLength);
@@ -522,8 +533,14 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
 			while(tempEdge != NULL){
 				int nodeIndex = tempEdge->nodeIndex;
 				bool orientation = tempEdge->orientation;
+				int tempWeight = 0;
+				if(weightType == 1){
+					tempWeight = tempEdge->overlapLength;
+				}else{
+					tempWeight = tempEdge->aligningReadCount;
+				}
 				
-				if(tempEdge->aligningReadCount < 0 || tempEdge->overlapLength <= maxCount){
+				if(tempEdge->aligningReadCount < 0 || tempWeight <= maxCount){
 					tempEdge1 = tempEdge->next;
 					scaffoldGraphHead->scaffoldGraph[i].outEdge = DeleteScaffoldGraphSpecialNode(scaffoldGraphHead->scaffoldGraph[i].outEdge, tempEdge->nodeIndex, orientation);
 					if(orientation == true){
@@ -542,7 +559,7 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
 							scaffoldGraphHead->scaffoldGraph[maxIndex].outEdge = DeleteScaffoldGraphSpecialNode(scaffoldGraphHead->scaffoldGraph[maxIndex].outEdge, i, maxOrientation);
 						}
 					}
-					maxCount = tempEdge->overlapLength;
+					maxCount = tempWeight;
 					maxIndex = tempEdge->nodeIndex;
 					maxOrientation = tempEdge->orientation;
 				}
@@ -558,8 +575,13 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
 			while(tempEdge != NULL){
 				int nodeIndex = tempEdge->nodeIndex;
 				bool orientation = tempEdge->orientation;
-				
-				if(tempEdge->aligningReadCount < 0 || tempEdge->overlapLength <= maxCount){
+				int tempWeight = 0;
+				if(weightType == 1){
+					tempWeight = tempEdge->overlapLength;
+				}else{
+					tempWeight = tempEdge->aligningReadCount;
+				}
+				if(tempEdge->aligningReadCount < 0 || tempWeight <= maxCount){
 					tempEdge1 = tempEdge->next;
 					scaffoldGraphHead->scaffoldGraph[i].inEdge = DeleteScaffoldGraphSpecialNode(scaffoldGraphHead->scaffoldGraph[i].inEdge, tempEdge->nodeIndex, orientation);
 					if(orientation == true){
@@ -578,7 +600,7 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
 							scaffoldGraphHead->scaffoldGraph[maxIndex].inEdge = DeleteScaffoldGraphSpecialNode(scaffoldGraphHead->scaffoldGraph[maxIndex].inEdge, i, maxOrientation);
 						}
 					}
-					maxCount = tempEdge->overlapLength;
+					maxCount = tempWeight;
 					maxIndex = tempEdge->nodeIndex;
 					maxOrientation = tempEdge->orientation;
 				}
@@ -747,7 +769,7 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
 		
                 
     }
-	
+	overlapContigCount = contigSetHead->overlapContigCount;
 	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
 	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
 	OptimizeScaffoldSetCongtigSequence(scaffoldSetHead->scaffoldSet, contigSetHead->contigCount);
@@ -2131,7 +2153,7 @@ bool GetOverlapBetweenArray(int * leftIndex, int leftNum, int * rightIndex, int 
 					break;
 				}
 			}
-			if(token == true && leftNum - i >= 2){
+			if(token == true && leftNum - i >= overlapContigCount){
 				overlapResult[0] = i;
 				overlapResult[1] = leftNum - 1;
 				overlapResult[2] = 0;

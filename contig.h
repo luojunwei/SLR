@@ -63,6 +63,12 @@ typedef struct ContigSetHead{
 	long int minContigCount;
 	long int minAllContigLength;
 	bool * visited;
+	int contigLengthIgnore;
+	int minAlignmentScore;
+	int minOverlapLength;
+	int overlapContigCount;
+	int minAlignmentRevised;
+	int weightType;
 	ContigSetHead(){
 		contigSet = NULL;
 		contigCount = 0;

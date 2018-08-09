@@ -26,12 +26,18 @@ int main(int argc,char** argv) {
 	long int readCount = 2000;
 	long int readLengthCutOff = 3000;
 	int readStart = 0;
+	int contigLengthIgnore = 0;
+	int minAlignmentScore = 20;
+	int minOverlapLength = 0;
+	int overlapContigCount = 2;
+	int minAlignmentRevised = 150;
+	int weightType = 1;
 	
 	char * contigSetFile = NULL;
 	char * longReadSetFile = NULL;
 	char * alignSefBamFile = NULL;
 	int ch = 0;
-	while ((ch = getopt(argc, argv, "c:r:p:m:n:d:")) != -1) {
+	while ((ch = getopt(argc, argv, "c:r:p:m:n:d:t:v:w:x:y:z:")) != -1) {
 		switch (ch) {
 			case 'c': contigSetFile = (char *)(optarg); break;
 			case 'r': longReadSetFile = (char *)(optarg); break;
@@ -39,6 +45,12 @@ int main(int argc,char** argv) {
 			case 'm': contigLengthThreshold = atoi(optarg); break;
 			case 'n': readLengthCutOff = atoi(optarg); break;
 			case 'd': alignSefBamFile = (char *)(optarg); break;
+			case 't': weightType = atoi(optarg); break;
+			case 'v': contigLengthIgnore = atoi(optarg); break;
+			case 'w': minAlignmentScore = atoi(optarg); break;
+			case 'x': minOverlapLength = atoi(optarg); break;
+			case 'y': overlapContigCount = atoi(optarg); break;
+			case 'z': minAlignmentRevised = atoi(optarg); break;
 			default: break; 
 		}
 	}
@@ -50,7 +62,12 @@ int main(int argc,char** argv) {
 	int fileNameLen = strlen(resultOutPutDirectory);
 
 	ContigSetHead * contigSetHead = GetContigSet(contigSetFile, contigLengthThreshold);
-	
+	contigSetHead->contigLengthIgnore = contigLengthIgnore;
+	contigSetHead->minAlignmentScore = minAlignmentScore;
+	contigSetHead->minOverlapLength = minOverlapLength;
+	contigSetHead->overlapContigCount = overlapContigCount;
+	contigSetHead->minAlignmentRevised = minAlignmentRevised;
+	contigSetHead->weightType = weightType;
 	
 	if(alignSefBamFile != NULL){
 		DetectRepeativeContigInSet(contigSetHead, alignSefBamFile, 1);

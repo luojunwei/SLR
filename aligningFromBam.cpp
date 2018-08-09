@@ -77,7 +77,8 @@ int GetAligningResut(ContigSetHead * contigSetHead, char * fileName, char * resu
     while(bamReader.GetNextAlignment(alignment)){
         
 		readName = alignment.Name;
-		if(!alignment.IsMapped() || alignment.MapQuality < 20 || contigSetHead->contigSet[alignment.RefID].repeativeContig == true){                                    
+		if(!alignment.IsMapped() || alignment.MapQuality < contigSetHead->minAlignmentScore || contigSetHead->contigSet[alignment.RefID].repeativeContig == true 
+		   || contigSetHead->contigSet[alignment.RefID].contigLength < contigSetHead->contigLengthIgnore){                                    
             previousReadName = readName;
 			continue;
         }
@@ -116,7 +117,7 @@ int GetAligningResut(ContigSetHead * contigSetHead, char * fileName, char * resu
 
 bool GetAligningResultOneLine(AligningResultHead * aligningResultHead, BamAlignment alignment, ContigSetHead * contigSetHead, long int index){
 	
-	int maxAlignmentLength = 150;
+	int maxAlignmentLength = contigSetHead->minAlignmentRevised;
 	
 	std::vector< int > clipSizes;
 	std::vector< int > readPositions;
@@ -201,8 +202,8 @@ bool GetAligningResultOneLine(AligningResultHead * aligningResultHead, BamAlignm
 	aligningResultHead->aligningResult[index].quality = alignment.MapQuality;
 
 	
-	if(aligningResultHead->aligningResult[index].overlapLength < maxAlignmentLength){
-		//return false;
+	if(aligningResultHead->aligningResult[index].overlapLength < contigSetHead->minOverlapLength){
+		return false;
 	}
 	
 	clipSizes.clear();
