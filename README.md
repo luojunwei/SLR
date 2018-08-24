@@ -94,5 +94,6 @@ Scaffolder: SLR
     Setp 2: Running other scaffolding tools (SSPACE-LR, LINKS) based on unique-contig-set.fa, and Getting scaffolding result: temp-scaffold-set.fa.
     Step 3: bwa index temp-scaffold-set.fa
     Step 4: bwa mem temp-scaffold-set.fa unique-contig-set.fa > unique-contig.sam
-    Step 5: SLR-unique-ambiguous -c <contigs.fa> -r <aligning.bam> -u <unique-contig-set.fa> -s <temp-scaffold-set.fa> -b <unique-contig.bam> -p <output_directory> 
+    Step 5: samtools view -Sb unique-contig.sam > unique-contig.bam
+    Step 6: SLR-unique-ambiguous -c <contigs.fa> -r <aligning.bam> -u <unique-contig-set.fa> -s <temp-scaffold-set.fa> -b <unique-contig.bam> -p <output_directory> 
 
