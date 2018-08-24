@@ -56,13 +56,17 @@ Scaffolder: SLR
 4) Running.
 ```
     Step 1: bwa index contigs.fasta
-    Step 2: bwa mem -t8 -k11 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
-    Step 3: samtools view -Sb aligning.sam > aligning.bam
-    Step 4: SLR -c <contigs.fa> -r <aligning.bam> -p <output_directory> [options]
+    Step 2: bwa mem -a contigs.fasta contigs.fasta > align-self.sam
+    Step 3: samtools view -Sb align-self.sam > align-self.bam
+    Step 4: bwa mem -t8 -k11 -W20 -r10 -A1 -B1 -O1 -E1 -L0 -a -Y contigs.fasta longreads.fasta > aligning.sam
+    Step 5: samtools view -Sb aligning.sam > aligning.bam
+    Step 6: SLR -c <contigs.fa> -r <aligning.bam> -d <align-self.bam> -p <output_directory> [options]
 	-c <contigs.fa>: 
 	    The file includes contigs produced by one assembler.
 	-r <aligning.bam>:
 	    The aligning result between the contigs and the long reads.
+	-d <align-self.bam>:
+	    The aligning result among the contigs.
 	-p <output_directory>:
 	    The output directory of scaffolding result.
 	-w <minimum_alignment_score>: 
@@ -95,5 +99,5 @@ Scaffolder: SLR
     Step 3: bwa index temp-scaffold-set.fa
     Step 4: bwa mem temp-scaffold-set.fa unique-contig-set.fa > unique-contig.sam
     Step 5: samtools view -Sb unique-contig.sam > unique-contig.bam
-    Step 6: SLR-unique-ambiguous -c <contigs.fa> -r <aligning.bam> -u <unique-contig-set.fa> -s <temp-scaffold-set.fa> -b <unique-contig.bam> -p <output_directory> 
+    Step 6: SLR-unique-ambiguous -c <contigs.fa> -r <aligning.bam> -d <align-self.bam> -u <unique-contig-set.fa> -s <temp-scaffold-set.fa> -b <unique-contig.bam> -p <output_directory> 
 
