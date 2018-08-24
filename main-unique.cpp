@@ -38,7 +38,7 @@ int main(int argc,char** argv) {
 	
 	int contigLengthIgnore = 0;
 	int minAlignmentScore = 20;
-	int minOverlapLength = 0;
+	int minOverlapLength = 100;
 	int overlapContigCount = 2;
 	int minAlignmentRevised = 150;
 	int weightType = 1;
