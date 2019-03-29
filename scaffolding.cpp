@@ -1124,6 +1124,8 @@ void InsertShortContigToSequence(ContigSequence * tempContigSequence, ContigSequ
 		first->next = tempContigSequence;
 	}
 	
+	fclose(fp);
+	
 }
 
 void InsertRepeatContigToSequence1(ContigSetHead * contigSetHead, ScaffoldSetHead * scaffoldSetHead, bool * printIndex, char * file, char * line, int maxSize){
