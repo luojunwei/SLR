@@ -352,6 +352,182 @@ LocalScaffoldSetHead * GetLocalScaffoldSetHead(char * file, char * line, int max
 
 }
 
+void WriteLocalScaffoldSetHead(LocalScaffoldSetHead * localScaffoldSetHead, char * file, bool * lineIndex){
+	FILE * fp; 
+    if((fp = fopen(file, "w")) == NULL){
+        printf("%s, does not exist!", file);
+        exit(0);
+    }
+	
+	for(long int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+		if(lineIndex[i] == true){
+			continue;
+		}
+		fprintf(fp, "%d,", localScaffoldSetHead->localScaffoldSet[i].contigNum);
+		for(long int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+			fprintf(fp, "%d,%d,%d,%d,", localScaffoldSetHead->localScaffoldSet[i].contigIndex[j], 
+					localScaffoldSetHead->localScaffoldSet[i].distance[j], 
+					localScaffoldSetHead->localScaffoldSet[i].orientation[j],
+					localScaffoldSetHead->localScaffoldSet[i].overlapLength[j]);
+		}
+		fprintf(fp, "\n");
+	}
+	
+	fflush(fp);
+	fclose(fp);
+
+}
+
+
+bool OptimizeJumpingInLocalScaffoldSet(ContigSetHead * contigSetHead, LocalScaffoldSetHead * localScaffoldSetHead, long int contigIndex, bool * lineIndex){
+	long int num = 0;
+	for(long int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+		for(long int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+			if(localScaffoldSetHead->localScaffoldSet[i].contigIndex[j] == contigIndex){
+				num++;
+				break;
+			}
+		}
+	}
+	
+	long int * indexArray = (long int *)malloc(sizeof(long int)*num);
+	num = 0;
+	for(long int i = 0; i < localScaffoldSetHead->localScaffoldNum; i++){
+		for(long int j = 0; j < localScaffoldSetHead->localScaffoldSet[i].contigNum; j++){
+			if(localScaffoldSetHead->localScaffoldSet[i].contigIndex[j] == contigIndex){
+				indexArray[num] = i;
+				num++;
+				break;
+			}
+		}
+	}
+	
+	bool re = false;
+	for(long int i = 0; i < num -1; i++){
+		for(long int j = i + 1; j < num; j++){
+			long int token = MergeTwoLocalScaffold(contigSetHead, localScaffoldSetHead, indexArray[i], indexArray[j], contigIndex);
+			if(token != -1){
+				re = true;
+				lineIndex[token] = true;
+			}
+		}
+	}
+
+	return re;
+
+}
+
+long int MergeTwoLocalScaffold(ContigSetHead * contigSetHead, LocalScaffoldSetHead * localScaffoldSetHead, long int leftIndex, long int rightIndex, long int contigIndex){
+	
+	long int leftStartIndex = -1;
+	long int rightStartIndex = -1;
+	bool leftOrientation = false;
+	bool rightOrientation = false;
+	
+	for(long int i = 0; i < localScaffoldSetHead->localScaffoldSet[leftIndex].contigNum; i++){
+		if(localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[i] == contigIndex){
+			leftStartIndex = i;
+			leftOrientation = localScaffoldSetHead->localScaffoldSet[leftIndex].orientation[i];
+		}
+	}
+	for(long int i = 0; i < localScaffoldSetHead->localScaffoldSet[rightIndex].contigNum; i++){
+		if(localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[i] == contigIndex){
+			rightStartIndex = i;
+			rightOrientation = localScaffoldSetHead->localScaffoldSet[rightIndex].orientation[i];
+		}
+	}
+	
+	if(leftOrientation == rightOrientation){
+		if(leftStartIndex > 0 && rightStartIndex > 0){
+			if(localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex - 1] > localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex - 1]){
+				if(rightStartIndex > 1 && localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex - 1] == localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex - 2]){
+					long int tempContigIndex = localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex - 1];
+					if(localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex - 1] > localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex - 2]
+					   + contigSetHead->contigSet[tempContigIndex].contigLength +  localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex - 1]){
+						return leftIndex;
+					}
+				}
+			}else{
+				if(leftStartIndex > 1 && localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex - 1] == localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex - 2]){
+					long int tempContigIndex = localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex - 1];
+					if(localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex - 1] > localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex - 2]
+					   + contigSetHead->contigSet[tempContigIndex].contigLength +  localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex - 1]){
+						return rightIndex;
+					}
+				}
+			}
+		}
+
+		if(leftStartIndex < localScaffoldSetHead->localScaffoldSet[leftIndex].contigNum - 1 && rightStartIndex < localScaffoldSetHead->localScaffoldSet[rightIndex].contigNum - 1){
+			if(localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex] > localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex]){
+				if(rightStartIndex < localScaffoldSetHead->localScaffoldSet[rightIndex].contigNum - 2 && localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex + 1] == localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex + 2]){
+					long int tempContigIndex = localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex + 1];
+					if(localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex] > localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex]
+					   + contigSetHead->contigSet[tempContigIndex].contigLength +  localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex + 1]){
+						return leftIndex;
+					}
+				}
+			}else{
+				if(leftStartIndex > localScaffoldSetHead->localScaffoldSet[leftIndex].contigNum - 2 && localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex + 1] == localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex + 2]){
+					long int tempContigIndex = localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex + 1];
+					if(localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex] > localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex]
+					   + contigSetHead->contigSet[tempContigIndex].contigLength +  localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex + 1]){
+						return rightIndex;
+					}
+				}
+			}
+		}
+
+		
+	}else{
+		if(leftStartIndex > 0 && rightStartIndex < localScaffoldSetHead->localScaffoldSet[rightIndex].contigNum - 1){
+			if(localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex - 1] > localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex]){
+				if(rightStartIndex < localScaffoldSetHead->localScaffoldSet[rightIndex].contigNum - 2 && localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex - 1] == localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex + 2]){
+					long int tempContigIndex = localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex + 1];
+					if(localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex - 1] > localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex]
+					   + contigSetHead->contigSet[tempContigIndex].contigLength +  localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex + 1]){
+						return leftIndex;
+					}
+				}
+			}else{
+				if(leftStartIndex > 1 && localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex + 1] == localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex - 2]){
+					long int tempContigIndex = localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex - 1];
+					if(localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex] > localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex - 2]
+					   + contigSetHead->contigSet[tempContigIndex].contigLength +  localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex - 1]){
+						return rightIndex;
+					}
+				}
+			}
+		}
+
+
+		if(leftStartIndex < localScaffoldSetHead->localScaffoldSet[leftIndex].contigNum - 1 && rightStartIndex > 0){
+			if(localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex] > localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex - 1]){
+				if(rightStartIndex > 1 && localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex + 1] == localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex - 2]){
+					long int tempContigIndex = localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex - 1];
+					
+					if(localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex] > localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex - 2]
+					   + contigSetHead->contigSet[tempContigIndex].contigLength +  localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex - 1]){
+						return leftIndex;
+					}
+				}
+			}else{
+				if(leftStartIndex > localScaffoldSetHead->localScaffoldSet[leftIndex].contigNum - 2 && localScaffoldSetHead->localScaffoldSet[rightIndex].contigIndex[rightStartIndex - 1] == localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex + 2]){
+					long int tempContigIndex = localScaffoldSetHead->localScaffoldSet[leftIndex].contigIndex[leftStartIndex + 1];
+					if(localScaffoldSetHead->localScaffoldSet[rightIndex].distance[rightStartIndex - 1] > localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex]
+					   + contigSetHead->contigSet[tempContigIndex].contigLength +  localScaffoldSetHead->localScaffoldSet[leftIndex].distance[leftStartIndex + 1]){
+						return rightIndex;
+					}
+				}
+			}
+		}
+	}
+	
+	return -1;
+
+}
+
+
 void * GetLocalScaffoldSetHeadSingle(char * file, char * line, int maxSize, long int index){
 	LocalScaffoldSetHead * localScaffoldSetHead = GetLocalScaffoldSetHead(file, line, maxSize);
 	
