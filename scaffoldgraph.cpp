@@ -1120,6 +1120,88 @@ void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * con
 	}
 	fclose(fp);
 	
+	
+	
+	LocalScaffoldSetHead * localScaffoldSetHead = GetLocalScaffoldSetHead(file, line, maxSize);
+	for(int i = 0; i < contigSetHead->contigCount; i++){
+		if(contigSetHead->contigSet[i].shortContig == true){
+			continue;
+		}
+		if(contigSetHead->visited[i] == true && contigSetHead->repeatContigIndex[i] == true){
+			OptimizeJumpingInLocalScaffoldSet(contigSetHead, localScaffoldSetHead, i, lineIndex);
+		}
+	}
+	WriteLocalScaffoldSetHead(localScaffoldSetHead, file, lineIndex);
+	
+	
+	
+	if((fp = fopen(file, "r")) == NULL){
+        printf("%s, does not exist!", file);
+        exit(0);
+    }
+	lineCount = 0;
+	while((fgets(line, maxSize, fp)) != NULL){ 
+		lineCount++;
+	}
+	fclose(fp);
+	
+	for(long int i = 0; i < lineCount; i++){
+		lineIndex[i] = false;
+	}
+	for(int i = 0; i < contigSetHead->contigCount; i++){
+		contigSetHead->visited[i] = false;
+		contigSetHead->repeatContigIndex[i] = false;
+	}
+	simpleGraphNodeCount = 0;
+
+	simpleGraph = GetLineIndex(contigSetHead, lineIndex, file, line, maxSize, lineCount, simpleGraphNodeCount);
+
+	GetGraphNeighbor(simpleGraph, contigSetHead, simpleGraphNodeCount);
+
+    if((fp = fopen(file, "r")) == NULL){
+        printf("%s, does not exist!", file);
+        exit(0);
+    }
+	
+	for(int i = 0; i < contigSetHead->contigCount; i++){
+		leftNeighbor[i] = -1;
+		rightNeighbor[i] = -1;
+	}
+	
+	contigIndex = -1;
+	previousContigIndex = -1;
+	orientation = -1;
+	previousOrientation = -1;
+	lineCount = 0;
+	while((fgets(line, maxSize, fp)) != NULL){ 
+		lineCount ++;
+		if(lineIndex[lineCount - 1] == true){
+			continue;
+		}
+		
+		p = strtok(line,split);
+		
+		int count = atoi(p);
+		if(count <= 1){
+			continue;
+		}
+		int a = 1;
+		contigIndex = -1;
+		while(a <= count * 4){
+			p = strtok(NULL,split);
+			if(a%4 == 1){
+				previousContigIndex = contigIndex;
+				contigIndex = atoi(p);
+				
+				if(a/4 < count-1 && a/4 > 0){
+					contigSetHead->repeatContigIndex[atoi(p)] = true;
+				}
+			}
+			a++;
+		}
+	}
+	fclose(fp);
+	
 	for(int i = 0; i < contigSetHead->contigCount; i++){
 		if(contigSetHead->contigSet[i].shortContig == true){
 			fprintf(fpAmbiguous, ">%d\n", i);
