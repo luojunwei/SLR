@@ -1314,10 +1314,6 @@ void GetScaffoldGraphNonUniqueLocalScaffold(ScaffoldGraphHead * scaffoldGraphHea
 	
 	
 	FILE * fp; 
-    if((fp = fopen(file, "r")) == NULL){
-        printf("%s, does not exist!", file);
-        exit(0);
-    }
 	
 	const char * split = ","; 
 	char * p; 
