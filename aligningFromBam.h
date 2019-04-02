@@ -127,6 +127,12 @@ bool GetAligningResultOneLine(AligningResultHead * aligningResultHead, ContigSet
 
 int GetContigIndex(ContigSetHead * contigSetHead, char * contigName);
 
+void WriteLocalScaffoldSetHead(LocalScaffoldSetHead * localScaffoldSetHead, char * file, bool * lineIndex);
+
+bool OptimizeJumpingInLocalScaffoldSet(ContigSetHead * contigSetHead, LocalScaffoldSetHead * localScaffoldSetHead, long int contigIndex, bool * lineIndex);
+
+long int MergeTwoLocalScaffold(ContigSetHead * contigSetHead, LocalScaffoldSetHead * localScaffoldSetHead, long int leftIndex, long int rightIndex, long int contigIndex);
+
 
 
 #endif
