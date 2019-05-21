@@ -3,13 +3,13 @@ CC=g++
 CPPFLAGS = -g -Wall -O3
 
 SLR: main.o contig.o aligningFromBam.o scaffoldgraph.o scaffolding.o
-	$(CC) -o $@ $^ ./lp/liblpsolve55.a -I $(BAMTOOLS_HOME_INCLUDE)/ $(BAMTOOLS_HOME_LIB)/libbamtools.a -lm -ldl -lz
+	$(CC) -o $@ $^ ./lp/liblpsolve55.a -I $(BAMTOOLS_HOME_INCLUDE)/ $(BAMTOOLS_HOME_LIB)/libbamtools.a -lm -ldl -lz -no-pie
 	
 SORT-Contig: contig.o sortContigSet.o 
 	$(CC) -o $@ $^ -I $(BAMTOOLS_HOME_INCLUDE)/ $(BAMTOOLS_HOME_LIB)/libbamtools.a -lz
 	
 SLR-unique-ambiguous: main-unique.o contig.o aligningFromBam.o aligningFromBamOfScaffold.o scaffoldgraph.o scaffolding.o
-	$(CC) -o $@ $^ ./lp/liblpsolve55.a -I $(BAMTOOLS_HOME_INCLUDE)/ $(BAMTOOLS_HOME_LIB)/libbamtools.a -lm -ldl -lz
+	$(CC) -o $@ $^ ./lp/liblpsolve55.a -I $(BAMTOOLS_HOME_INCLUDE)/ $(BAMTOOLS_HOME_LIB)/libbamtools.a -lm -ldl -lz -no-pie
 
 main-unique.o: main-unique.cpp contig.h aligningFromBam.h scaffoldgraph.h scaffolding.h aligningFromBamOfScaffold.h 
 	$(CC) -c main-unique.cpp -I $(BAMTOOLS_HOME_INCLUDE)/ -lz
