@@ -113,4 +113,6 @@ void GetGraphNeighbor(SimpleGraph * simpleGraph, ContigSetHead * contigSetHead, 
 
 void RemoveCycleInScaffoldGraphTwoNode(ScaffoldGraphHead * scaffoldGraphHead);
 
+void OutputScaffoldGraphGFA2(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, FILE * fp);
+
 #endif
