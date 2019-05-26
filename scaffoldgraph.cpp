@@ -68,6 +68,103 @@ void InsertOutOrInEdge(ScaffoldGraphHead * scaffoldGraphHead, int readIndex, int
 	
 }
 
+void OutputScaffoldGraphGFA2(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * contigSetHead, FILE * fp){
+	
+	for(int i = 0; i < contigSetHead->contigCount; i++){
+		fprintf(fp, "S\tcontig-%d\t%d\t*\n", i, contigSetHead->contigSet[i].contigLength);
+	}
+	long int contigCount = contigSetHead->contigCount;
+	bool ** index = new bool*[contigCount];
+    for(int i=0;i<contigCount;i++){
+        index[i] = new bool[contigCount];
+        for(int j=0;j<contigCount;j++){
+            index[i][j] = false;
+        }
+    }
+	
+	
+	ScaffoldGraphNode * temp = NULL;
+	for(int i = 0; i < scaffoldGraphHead->scaffoldGraphNodeCount; i++){
+		if(scaffoldGraphHead->scaffoldGraph[i].outEdge != NULL){
+			temp = scaffoldGraphHead->scaffoldGraph[i].outEdge;
+			while(temp != NULL){
+				if(index[i][temp->nodeIndex] != true && index[temp->nodeIndex][i] != true){
+					if(temp->gapDistance > 0){
+						fprintf(fp, "G\tcontig-%d", i);
+						fprintf(fp, "\t%s", "+");
+						fprintf(fp, "\tcontig-%d", temp->nodeIndex);
+						if(temp->orientation == 1){
+							fprintf(fp, "\t%s", "+");
+						}else{
+							fprintf(fp, "\t%s", "-");
+						}
+						fprintf(fp, "\t%d", temp->gapDistance);
+						fprintf(fp, "\n");
+					}else{
+						fprintf(fp, "L\tcontig-%d", i);
+						fprintf(fp, "\t%s", "+");
+						fprintf(fp, "\tcontig-%d", temp->nodeIndex);
+						if(temp->orientation == 1){
+							fprintf(fp, "\t%s", "+");
+						}else{
+							fprintf(fp, "\t%s", "-");
+						}
+						fprintf(fp, "\t%ld", labs(temp->gapDistance));
+						fprintf(fp, "\t%ld", labs(temp->gapDistance));
+						fprintf(fp, "\n");
+					}
+				}
+				index[i][temp->nodeIndex] = true;
+				index[temp->nodeIndex][i] = true;
+				temp = temp->next;
+			}
+		}
+		
+		if(scaffoldGraphHead->scaffoldGraph[i].inEdge != NULL){
+			temp = scaffoldGraphHead->scaffoldGraph[i].inEdge;
+			while(temp != NULL){
+				if(index[i][temp->nodeIndex] != true && index[temp->nodeIndex][i] != true){
+					if(temp->gapDistance > 0){
+						fprintf(fp, "G\tcontig-%d", temp->nodeIndex);
+						if(temp->orientation == 1){
+							fprintf(fp, "\t%s", "+");
+						}else{
+							fprintf(fp, "\t%s", "-");
+						}
+						fprintf(fp, "\tcontig-%d", i);
+						fprintf(fp, "\t%s", "+");
+						fprintf(fp, "\t%d", temp->gapDistance);
+						fprintf(fp, "\n");
+					}else{
+						fprintf(fp, "L\tcontig-%d", temp->nodeIndex);
+						if(temp->orientation == 1){
+							fprintf(fp, "\t%s", "+");
+						}else{
+							fprintf(fp, "\t%s", "-");
+						}
+						fprintf(fp, "\tcontig-%d", i);
+						fprintf(fp, "\t%s", "+");
+						fprintf(fp, "\t%ld", labs(temp->gapDistance));
+						fprintf(fp, "\t%ld", labs(temp->gapDistance));
+						fprintf(fp, "\n");
+					}
+				}
+				index[i][temp->nodeIndex] = true;
+				index[temp->nodeIndex][i] = true;
+				
+				temp = temp->next;
+			}
+		}
+	}
+	
+	
+	for(int i=0;i<contigCount;i++){
+        delete [] index[i];
+    }
+
+    delete [] index;
+}
+
 void OutputScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead){
 	ScaffoldGraphNode * temp = NULL;
 	for(int i = 0; i < scaffoldGraphHead->scaffoldGraphNodeCount; i++){
