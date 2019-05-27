@@ -609,6 +609,18 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
 		}
 		
 	}
+
+	char * graphGFA2 = new char[400];
+	strcpy(graphGFA2, dir);
+	strcat(graphGFA2, "/graph.GFA2");
+	
+	FILE * fpGFA2;
+	if((fpGFA2 = fopen(graphGFA2, "w")) == NULL){
+        printf("%s, does not exist!", graphGFA2);
+        exit(0);
+    }
+	
+	OutputScaffoldGraphGFA2(scaffoldGraphHead, contigSetHead, fpGFA2);
 	
     int i = 0;
     int j = 0;
