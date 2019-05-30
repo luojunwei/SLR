@@ -19,7 +19,7 @@ using namespace std;
 
 int main(int argc,char** argv) {
 	
-	int maxSize = 2000;
+	int maxSize = 80000;
 	char * line = (char *)malloc(sizeof(char)*maxSize);
 
 	char * resultOutPutDirectory = (char *)malloc(sizeof(char)*50);
