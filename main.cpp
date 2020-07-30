@@ -141,6 +141,10 @@ int main(int argc,char** argv) {
 	fflush(fp4);
 	
 	fflush(fp5);
+	
+	fclose(fp4);
+	
+	fclose(fp5);
 
 	GetScaffoldGraph(scaffoldGraphHead, contigSetHead, file4, line, maxSize, fpUnique, fpAmbiguous);
 	
