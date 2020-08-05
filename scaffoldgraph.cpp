@@ -1173,8 +1173,8 @@ void GetScaffoldGraph(ScaffoldGraphHead * scaffoldGraphHead, ContigSetHead * con
     }
 
 	
-	int leftNeighbor[contigSetHead->contigCount];
-	int rightNeighbor[contigSetHead->contigCount];
+	int * leftNeighbor = (int *)malloc(sizeof(int)*contigSetHead->contigCount);
+	int * rightNeighbor = (int *)malloc(sizeof(int)*contigSetHead->contigCount);
 	for(int i = 0; i < contigSetHead->contigCount; i++){
 		//contigSetHead->visited[i] = false;
 		//contigSetHead->repeatContigIndex[i] = false;
