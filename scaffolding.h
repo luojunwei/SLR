@@ -85,4 +85,6 @@ void OverlapHeadAndTailGraph(ContigSetHead * contigSetHead, ScaffoldSetHead * sc
 
 void OutputUnUsedLocalScaffold(ContigSetHead * contigSetHead, ScaffoldSetHead * scaffoldSetHead, LocalScaffoldSetHead * localScaffoldSetHead, ScaffoldGraphHead * scaffoldGraphHead, char * file, char * line, long int maxSize);
 
+void sort(int * sortNode, int * length, long int left, long int right);
+
 #endif
