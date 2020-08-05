@@ -26,6 +26,7 @@ long int DetermineOrientationOfContigs(ScaffoldGraph * scaffoldGraph, long int c
     long int c = 1000;
     
     bool * contigIndex = new bool[contigCount];
+    /*
     bool ** index = new bool*[contigCount];
     for(i=0;i<contigCount;i++){
         index[i] = new bool[contigCount];
@@ -33,9 +34,24 @@ long int DetermineOrientationOfContigs(ScaffoldGraph * scaffoldGraph, long int c
             index[i][j] = false;
         }   
     }
+    */
     long int edgeNumber = 0;
     long int constraintNumber = 0;
     ScaffoldGraphNode * tempEdge = NULL;
+    ScaffoldGraphNode * tempEdge1 = NULL;
+	
+for(int i = 0; i < contigCount; i++){
+	tempEdge = scaffoldGraph[i].outEdge;
+	while(tempEdge != NULL){
+		tempEdge->visited = false;
+		tempEdge = tempEdge->next;
+	}
+	tempEdge = scaffoldGraph[i].inEdge;
+	while(tempEdge != NULL){
+		tempEdge->visited = false;
+		tempEdge = tempEdge->next;
+	}
+}
     
     for(i=0;i<contigCount;i++){
         tempEdge = scaffoldGraph[i].outEdge;
@@ -86,7 +102,8 @@ long int DetermineOrientationOfContigs(ScaffoldGraph * scaffoldGraph, long int c
                 tempEdge = scaffoldGraph[i].inEdge;
             }
             while(tempEdge!=NULL){
-                if(index[i][tempEdge->nodeIndex] == false && index[tempEdge->nodeIndex][i] == false){
+                if(tempEdge->visited == false){
+		    //if(index[i][tempEdge->nodeIndex] == false && index[tempEdge->nodeIndex][i] == false){
                     if(tempEdge->orientation == false){
                         j = 0;
                         colno[j] = i+1;
@@ -170,8 +187,25 @@ long int DetermineOrientationOfContigs(ScaffoldGraph * scaffoldGraph, long int c
 						weight[p-2] = tempEdge->aligningReadCount;
 					}
 					
-                    index[i][tempEdge->nodeIndex] = true;
-                    index[tempEdge->nodeIndex][i] = true;
+                    //index[i][tempEdge->nodeIndex] = true;
+                    //index[tempEdge->nodeIndex][i] = true;
+		    tempEdge->visited = true;
+		    tempEdge1 = scaffoldGraph[tempEdge->nodeIndex].outEdge;
+			while(tempEdge1 != NULL){
+				if(tempEdge1->nodeIndex == i){
+					tempEdge1->visited = true;
+					break;
+				}
+				tempEdge1 = tempEdge1->next;
+			}
+			tempEdge1 = scaffoldGraph[tempEdge->nodeIndex].inEdge;
+			while(tempEdge1 != NULL){
+				if(tempEdge1->nodeIndex == i){
+					tempEdge1->visited = true;
+					break;
+				}
+				tempEdge1 = tempEdge1->next;
+			}
 
                 }
                 tempEdge = tempEdge->next;
@@ -230,10 +264,10 @@ long int DetermineOrientationOfContigs(ScaffoldGraph * scaffoldGraph, long int c
     }
     
     delete [] contigIndex;
-    for(i=0;i<contigCount;i++){
-        delete [] index[i];
-    }
-    delete [] index;
+    //for(i=0;i<contigCount;i++){
+       // delete [] index[i];
+    //}
+    //delete [] index;
     delete [] weight;
     delete [] edgeLeftNode;
     delete [] edgeRightNode;
@@ -256,17 +290,31 @@ long int * IterativeDetermineOrderOfContigs(ContigSetHead * contigSetHead, Scaff
     
     bool * contigVisited = new bool[contigCount];
 
-    bool ** index = new bool*[contigCount];
+    //bool ** index = new bool*[contigCount];
     for(i=0;i<contigCount;i++){
-        index[i] = new bool[contigCount];
-        for(j=0;j<contigCount;j++){
-            index[i][j] = false;
-        }   
+       // index[i] = new bool[contigCount];
+        //for(j=0;j<contigCount;j++){
+            //index[i][j] = false;
+        //}   
         contigVisited[i] = false;
     }
 
     long int edgeNumber = 0;
     ScaffoldGraphNode * tempEdge = NULL;
+    ScaffoldGraphNode * tempEdge1 = NULL;
+	
+for(int i = 0; i < contigCount; i++){
+	tempEdge = scaffoldGraph[i].outEdge;
+	while(tempEdge != NULL){
+		tempEdge->visited = false;
+		tempEdge = tempEdge->next;
+	}
+	tempEdge = scaffoldGraph[i].inEdge;
+	while(tempEdge != NULL){
+		tempEdge->visited = false;
+		tempEdge = tempEdge->next;
+	}
+}
     
     for(i=0;i<contigCount;i++){
 		tempEdge = scaffoldGraph[i].outEdge;
@@ -319,8 +367,8 @@ long int * IterativeDetermineOrderOfContigs(ContigSetHead * contigSetHead, Scaff
             }
             long int start = 0;
             while(tempEdge!=NULL){  
-                
-                if(index[i][tempEdge->nodeIndex] == false && index[tempEdge->nodeIndex][i] == false){
+                if(tempEdge->visited == false){
+                //if(index[i][tempEdge->nodeIndex] == false && index[tempEdge->nodeIndex][i] == false){
                     
                     if((contigOrientation[i] == 1 && q ==0) || (contigOrientation[i]==0 && q==1)){
                         j = 0;
@@ -410,9 +458,25 @@ long int * IterativeDetermineOrderOfContigs(ContigSetHead * contigSetHead, Scaff
                     gapDistance[p-1] = tempEdge->gapDistance;
                     p++;
                     constraintNumber = constraintNumber + 4; 
-                    index[i][tempEdge->nodeIndex] = true;
-                    index[tempEdge->nodeIndex][i] = true;
-                    
+                    //index[i][tempEdge->nodeIndex] = true;
+                    //index[tempEdge->nodeIndex][i] = true;
+                    tempEdge->visited = true;
+			tempEdge1 = scaffoldGraph[tempEdge->nodeIndex].outEdge;
+			while(tempEdge1 != NULL){
+				if(tempEdge1->nodeIndex == i){
+					tempEdge1->visited = true;
+					break;
+				}
+				tempEdge1 = tempEdge1->next;
+			}
+			tempEdge1 = scaffoldGraph[tempEdge->nodeIndex].inEdge;
+			while(tempEdge1 != NULL){
+				if(tempEdge1->nodeIndex == i){
+					tempEdge1->visited = true;
+					break;
+				}
+				tempEdge1 = tempEdge1->next;
+			}
 
                 }
                 tempEdge = tempEdge->next;
@@ -486,13 +550,13 @@ long int * IterativeDetermineOrderOfContigs(ContigSetHead * contigSetHead, Scaff
     long int trueNumber = 0;
     long int realTrueNumber = 0;
     
-    for(i=0;i<contigCount;i++){
-        delete [] index[i];
-    }
+    //for(i=0;i<contigCount;i++){
+        //delete [] index[i];
+    //}
     
     
     delete [] contigVisited;
-    delete [] index;
+    //delete [] index;
     delete [] weight;
     delete [] edgeLeftNode;
     delete [] edgeRightNode;
@@ -501,6 +565,47 @@ long int * IterativeDetermineOrderOfContigs(ContigSetHead * contigSetHead, Scaff
     
     delete_lp(lp);
     
+}
+
+void sort(int * sortNode, int * length, long int left, long int right)
+{
+	
+	if(left >= right){
+        return ;
+    }
+
+    long int i = left;
+    long int j = right;
+    long int key = length[left];
+	long int index = sortNode[left];
+
+    while(i < j){
+        while(i < j && (key < length[j])){
+            j--;
+        }
+		
+		if(i < j){
+			length[i] = length[j];
+			sortNode[i] = sortNode[j];
+			i++;
+		}
+      
+        while(i < j && (key > length[i])){
+            i++;
+        }
+		
+		if(i < j){
+			length[j] = length[i];
+			sortNode[j] = sortNode[i];
+			j--;
+		}
+    }
+
+    length[i] = key;
+	sortNode[i] = index;
+	
+    sort(sortNode, length, left, i - 1);
+    sort(sortNode, length, i + 1, right); 
 }
 
 
@@ -620,28 +725,30 @@ ScaffoldSetHead * GetScaffoldSet(ScaffoldGraphHead * scaffoldGraphHead, ContigSe
         exit(0);
     }
 	
-	OutputScaffoldGraphGFA2(scaffoldGraphHead, contigSetHead, fpGFA2);
+	//OutputScaffoldGraphGFA2(scaffoldGraphHead, contigSetHead, fpGFA2);
 	
     int i = 0;
     int j = 0;
     
     bool * printIndex = (bool *)malloc(sizeof(bool)*scaffoldGraphHead->scaffoldGraphNodeCount);
 	int * sortNode = (int *)malloc(sizeof(int)*scaffoldGraphHead->scaffoldGraphNodeCount);
-    
+    int * tempLength = (int *)malloc(sizeof(int)*scaffoldGraphHead->scaffoldGraphNodeCount);
+	
     for(int i = 0; i < scaffoldGraphHead->scaffoldGraphNodeCount; i++){
         sortNode[i] = i;
 		printIndex[i] = false;
+	    tempLength[i] = contigSetHead->contigSet[i].contigLength;
     }
-	
-	for(int i = 0; i < scaffoldGraphHead->scaffoldGraphNodeCount; i++){
-        for(int j = i; j < scaffoldGraphHead->scaffoldGraphNodeCount; j++){
-			if(contigSetHead->contigSet[sortNode[i]].contigLength < contigSetHead->contigSet[sortNode[j]].contigLength){
-				int temp = sortNode[i];
-				sortNode[i] = sortNode[j];
-				sortNode[j] = temp;
-			}
-    	}
-    }
+	sort(sortNode, tempLength, 0, scaffoldGraphHead->scaffoldGraphNodeCount - 1);
+	//for(int i = 0; i < scaffoldGraphHead->scaffoldGraphNodeCount; i++){
+       // for(int j = i; j < scaffoldGraphHead->scaffoldGraphNodeCount; j++){
+			//if(contigSetHead->contigSet[sortNode[i]].contigLength < contigSetHead->contigSet[sortNode[j]].contigLength){
+				//int temp = sortNode[i];
+				//sortNode[i] = sortNode[j];
+				//sortNode[j] = temp;
+			//}
+    	//}
+    //}
 	
 	
 	ScaffoldGraph * scaffoldGraph = scaffoldGraphHead->scaffoldGraph;
