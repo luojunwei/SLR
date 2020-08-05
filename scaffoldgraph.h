@@ -23,6 +23,7 @@ typedef struct ScaffoldGraphNode{
 	bool orientation;
 	int overlapLength;
 	int * readIndexArray;
+	bool visited;
 	ScaffoldGraphNode * next;
 }ScaffoldGraphNode;
 
